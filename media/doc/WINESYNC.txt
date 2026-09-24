@@ -32,6 +32,7 @@ dll/directx/wine/d3d9           # Synced to WineStaging-3.3
 dll/directx/wine/d3dcompiler_43 # Synced to WineStaging-4.18
 dll/directx/wine/d3drm          # Synced to WineStaging-4.18
 sdk/include/psdk/dwmapi.h       # Synced to Wine-11.18
+sdk/include/psdk/iads.idl       # Synced to Wine-11.18
 sdk/include/psdk/pdh.h          # Synced to Wine-11.18
 dll/directx/wine/d3dx9_24 => 43 # Synced to WineStaging-6.0-rc5
 dll/directx/wine/d3dxof         # Synced to WineStaging-4.18
@@ -51,10 +52,10 @@ dll/directx/wine/qedit          # Synced to WineStaging-3.17
 dll/directx/wine/quartz         # Synced to WineStaging-3.9
 dll/directx/wine/wined3d        # Synced to WineStaging-3.3
 
-dll/win32/activeds            # Synced to Wine-10.0
+dll/win32/activeds            # Synced to Wine-11.18 (dnwithbinary.c added; needs psdk/iads.idl)
 dll/win32/activeds.tlb        # Synced to Wine-10.0
 dll/win32/actxprxy            # Synced to Wine-10.0 (11.18 delta needs psdk/shobjidl.idl)
-dll/win32/advpack             # Synced to Wine-10.0
+dll/win32/advpack             # Synced to Wine-11.18
 dll/win32/atl                 # Synced to Wine-11.18
 dll/win32/atl80               # Synced to Wine-10.0
 dll/win32/atl100              # Synced to Wine-10.0
@@ -63,7 +64,7 @@ dll/win32/avrt                # Synced to Wine-10.0
 dll/win32/bcrypt              # Synced to WineStaging-10.6 (+ winetest synced to d9148e48a3257ae80361f02f0bb7a2d607ef18ec)
 dll/win32/bcryptprimitives    # Synced to Wine-11.18
 dll/win32/bluetoothapis       # Synced to Wine-10.0
-dll/win32/cabinet             # Synced to Wine-10.0
+dll/win32/cabinet             # Synced to Wine-10.0 (11.18 adds compressapi.c and the Compression API - see below)
 dll/win32/clusapi             # Synced to Wine-10.0
 dll/win32/combase             # Synced to Wine-10.0
 dll/win32/comcat              # Synced to Wine-10.0
@@ -230,14 +231,14 @@ dll/win32/winusb              # Synced to Wine-10.0
 dll/win32/wldap32             # Synced to WineStaging-4.18
 dll/win32/wmi                 # Synced to Wine-10.0
 dll/win32/wmiutils            # Synced to Wine-10.0
-dll/win32/wmvcore             # Synced to WineStaging-4.18
+dll/win32/wmvcore             # Synced to WineStaging-4.18 (our async_reader.c is a stubbed fork - see below)
 dll/win32/wshom.ocx           # Synced to Wine-11.18
 dll/win32/wtsapi32            # Synced to WineStaging-4.18
 dll/win32/wuapi               # Synced to Wine-10.0
 dll/win32/xinput1_1           # Synced to WineStaging-2.9
 dll/win32/xinput1_2           # Synced to WineStaging-2.9
-dll/win32/xinput1_3           # Synced to WineStaging-2.9
-dll/win32/xinput9_1_0         # Synced to WineStaging-2.9
+dll/win32/xinput1_3           # Synced to WineStaging-2.9 (our implementation is not Wine's - see below)
+dll/win32/xinput9_1_0         # Synced to WineStaging-2.9 (our implementation is not Wine's - see below)
 dll/win32/xmllite             # Synced to Wine-11.18
 dll/win32/xolehlp             # Synced to Wine-10.0
 
@@ -529,6 +530,33 @@ Wine moved version resources into its Makefiles
 
     The same reasoning covers a deleted .rc we have no counterpart for at all:
     nothing to do.
+
+Components we forked hard are not sync candidates
+    A few modules carry a ReactOS implementation of the code while only the
+    .spec and .rc came from Wine. Upstream deltas to those cannot be merged;
+    they would have to be reimplemented. Measured against Wine-11.18:
+
+      dll/win32/xinput1_3, xinput9_1_0   ours are older from-scratch
+                                         implementations of a different shape
+                                         (xinput9_1_0 is 39 lines against
+                                         upstream's 135)
+      dll/win32/wmvcore/reader.c         ~41% Wine lineage, mostly stubs,
+                                         while upstream's async_reader.c is
+                                         a real implementation. Wine-11.18
+                                         only changes two lines there (a
+                                         CoInitializeEx/CoUninitialize bracket
+                                         around the reader thread), but they
+                                         land in a function we do not have.
+      dll/win32/cabinet                  our CMake build has no equivalent of
+                                         Wine's VER_PRODUCTVERSION and the
+                                         11.18 delta adds a whole new API
+                                         (compressapi.c plus six exports and
+                                         include/compressapi.h), so it is an
+                                         addition rather than a merge.
+
+    Note also that our file names differ for these: upstream's async_reader.c
+    is our reader.c, and upstream's main.c is our <module>_main.c. Match by
+    content, not by name, before deciding a file is new.
 
 A spec's parameter list does not change the built binary
     It is natural to worry when upstream rewrites a .spec parameter list,
