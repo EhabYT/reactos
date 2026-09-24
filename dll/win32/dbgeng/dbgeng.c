@@ -1194,7 +1194,7 @@ static HRESULT STDMETHODCALLTYPE debugdataspaces_ReadVirtual(IDebugDataSpaces *i
         ULONG buffer_size, ULONG *read_len)
 {
     struct debug_client *debug_client = impl_from_IDebugDataSpaces(iface);
-    static struct target_process *target;
+    struct target_process *target;
     HRESULT hr = S_OK;
     SIZE_T length;
 
@@ -1490,7 +1490,7 @@ static HRESULT STDMETHODCALLTYPE debugsymbols_GetOffsetByLine(IDebugSymbols3 *if
 static HRESULT STDMETHODCALLTYPE debugsymbols_GetNumberModules(IDebugSymbols3 *iface, ULONG *loaded, ULONG *unloaded)
 {
     struct debug_client *debug_client = impl_from_IDebugSymbols3(iface);
-    static struct target_process *target;
+    struct target_process *target;
     HRESULT hr;
 
     TRACE("%p, %p, %p.\n", iface, loaded, unloaded);
@@ -1538,8 +1538,8 @@ static HRESULT STDMETHODCALLTYPE debugsymbols_GetModuleByOffset(IDebugSymbols3 *
         ULONG start_index, ULONG *index, ULONG64 *base)
 {
     struct debug_client *debug_client = impl_from_IDebugSymbols3(iface);
-    static struct target_process *target;
     const struct module_info *info;
+    struct target_process *target;
 
     TRACE("%p, %s, %lu, %p, %p.\n", iface, wine_dbgstr_longlong(offset), start_index, index, base);
 
@@ -1581,6 +1581,7 @@ static HRESULT STDMETHODCALLTYPE debugsymbols_GetModuleParameters(IDebugSymbols3
     struct debug_client *debug_client = impl_from_IDebugSymbols3(iface);
     const struct module_info *info;
     struct target_process *target;
+    HRESULT hr = S_OK;
     unsigned int i;
 
     TRACE("%p, %lu, %p, %lu, %p.\n", iface, count, bases, start, params);
@@ -1605,15 +1606,22 @@ static HRESULT STDMETHODCALLTYPE debugsymbols_GetModuleParameters(IDebugSymbols3
     }
     else
     {
-        for (i = start; i < start + count; ++i)
+        for (i = 0; i < count; ++i)
         {
-            if (!(info = debug_target_get_module_info(target, i)))
-                return E_INVALIDARG;
-            params[i] = info->params;
+            if ((info = debug_target_get_module_info(target, i + start)))
+            {
+                params[i] = info->params;
+            }
+            else
+            {
+                memset(&params[i], 0, sizeof(*params));
+                params[i].Base = DEBUG_INVALID_OFFSET;
+                hr = E_INVALIDARG;
+            }
         }
     }
 
-    return S_OK;
+    return hr;
 }
 
 static HRESULT STDMETHODCALLTYPE debugsymbols_GetSymbolModule(IDebugSymbols3 *iface, const char *symbol, ULONG64 *base)
@@ -2951,7 +2959,7 @@ static HRESULT STDMETHODCALLTYPE debugcontrol_GetDebuggeeType(IDebugControl4 *if
         ULONG *qualifier)
 {
     struct debug_client *debug_client = impl_from_IDebugControl4(iface);
-    static struct target_process *target;
+    struct target_process *target;
 
     FIXME("%p, %p, %p stub.\n", iface, debug_class, qualifier);
 
@@ -2977,7 +2985,7 @@ static HRESULT STDMETHODCALLTYPE debugcontrol_GetActualProcessorType(IDebugContr
 static HRESULT STDMETHODCALLTYPE debugcontrol_GetExecutingProcessorType(IDebugControl4 *iface, ULONG *type)
 {
     struct debug_client *debug_client = impl_from_IDebugControl4(iface);
-    static struct target_process *target;
+    struct target_process *target;
     HRESULT hr;
 
     TRACE("%p, %p.\n", iface, type);
@@ -3036,7 +3044,7 @@ static HRESULT STDMETHODCALLTYPE debugcontrol_GetPageSize(IDebugControl4 *iface,
 static HRESULT STDMETHODCALLTYPE debugcontrol_IsPointer64Bit(IDebugControl4 *iface)
 {
     struct debug_client *debug_client = impl_from_IDebugControl4(iface);
-    static struct target_process *target;
+    struct target_process *target;
     HRESULT hr;
 
     TRACE("%p.\n", iface);

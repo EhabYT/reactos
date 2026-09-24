@@ -340,18 +340,15 @@ static void MSI_FreePackage( MSIOBJECTHDR *arg)
 {
     MSIPACKAGE *package = (MSIPACKAGE *)arg;
 
-    msi_destroy_assembly_caches( package );
-
     if( package->dialog )
         msi_dialog_destroy( package->dialog );
 
     msiobj_release( &package->db->hdr );
     free_package_structures(package);
     CloseHandle( package->log_file );
+
     if (package->rpc_server_started)
         RpcServerUnregisterIf(s_IWineMsiRemote_v0_0_s_ifspec, NULL, FALSE);
-    if (rpc_handle)
-        RpcBindingFree(&rpc_handle);
     if (package->custom_server_32_process)
         custom_stop_server(package->custom_server_32_process, package->custom_server_32_pipe);
     if (package->custom_server_64_process)
@@ -536,7 +533,12 @@ static LPWSTR get_fusion_filename(MSIPACKAGE *package)
         if (!RegQueryValueExW(hkey, L"InstallPath", NULL, &type, (BYTE *)path, &size))
         {
             len = lstrlenW(path) + lstrlenW(L"fusion.dll") + 2;
-            if (!(filename = malloc(len * sizeof(WCHAR)))) return NULL;
+            if (!(filename = malloc(len * sizeof(WCHAR))))
+            {
+                RegCloseKey(hkey);
+                RegCloseKey(netsetup);
+                return NULL;
+            }
 
             lstrcpyW(filename, path);
             lstrcatW(filename, L"\\");
@@ -785,7 +787,7 @@ static VOID set_installer_properties(MSIPACKAGE *package)
     msi_set_property( package->db, L"Intel", bufstr, len );
     if (sys_info.wProcessorArchitecture == PROCESSOR_ARCHITECTURE_INTEL)
     {
-        GetSystemDirectoryW( pth, MAX_PATH );
+        wcscpy( pth, sysdir );
         PathAddBackslashW( pth );
         msi_set_property( package->db, L"SystemFolder", pth, -1 );
 
@@ -806,7 +808,7 @@ static VOID set_installer_properties(MSIPACKAGE *package)
         msi_set_property( package->db, L"Msix64", bufstr, -1 );
         msi_set_property( package->db, L"VersionNT64", verstr, -1 );
 
-        GetSystemDirectoryW( pth, MAX_PATH );
+        wcscpy( pth, sysdir );
         PathAddBackslashW( pth );
         msi_set_property( package->db, L"System64Folder", pth, -1 );
 

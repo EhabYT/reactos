@@ -1054,6 +1054,7 @@ static void write_registry_values(const WCHAR *regkey, const WCHAR *driver, cons
                             if(!value)
                             {
                                 RegCloseKey(hkeydriver);
+                                RegCloseKey(hkey);
                                 ERR("Out of memory\n");
                                 return;
                             }
@@ -1068,6 +1069,7 @@ static void write_registry_values(const WCHAR *regkey, const WCHAR *driver, cons
                             if(!value)
                             {
                                 RegCloseKey(hkeydriver);
+                                RegCloseKey(hkey);
                                 ERR("Out of memory\n");
                                 return;
                             }
@@ -1077,7 +1079,12 @@ static void write_registry_values(const WCHAR *regkey, const WCHAR *driver, cons
                     else
                     {
                         len = lstrlenW(divider) + 1;
-                        value = malloc(len * sizeof(WCHAR));
+                        if (!(value = malloc(len * sizeof(WCHAR))))
+                        {
+                            RegCloseKey(hkeydriver);
+                            RegCloseKey(hkey);
+                            return;
+                        }
                         lstrcpyW(value, divider);
                     }
 
@@ -1847,7 +1854,7 @@ BOOL WINAPI SQLWriteDSNToIniW(LPCWSTR lpszDSN, LPCWSTR lpszDriver)
             RegDeleteTreeW(hkey, lpszDSN);
             if ((ret = RegCreateKeyW(hkey, lpszDSN, &hkeydriver)) == ERROR_SUCCESS)
             {
-                RegSetValueExW(sources, L"driver", 0, REG_SZ, (BYTE*)filename, (lstrlenW(filename)+1)*sizeof(WCHAR));
+                RegSetValueExW(hkeydriver, L"driver", 0, REG_SZ, (BYTE *)filename, (lstrlenW(filename) + 1) * sizeof(WCHAR));
                 RegCloseKey(hkeydriver);
             }
         }

@@ -40,7 +40,7 @@
 
 WINE_DEFAULT_DEBUG_CHANNEL(msi);
 
-#include "pshpack1.h"
+#pragma pack(push,1)
 
 struct property_set_header
 {
@@ -83,7 +83,7 @@ struct property_data
     } u;
 };
 
-#include "poppack.h"
+#pragma pack(pop)
 
 static HRESULT (WINAPI *pPropVariantChangeType)
     (PROPVARIANT *ppropvarDest, REFPROPVARIANT propvarSrc,
@@ -139,6 +139,7 @@ static UINT get_type( UINT uiProperty )
     case PID_LASTPRINTED:
     case PID_CREATE_DTM:
     case PID_LASTSAVE_DTM:
+    case PID_EDITTIME:
          return VT_FILETIME;
 
     case PID_WORDCOUNT:
@@ -215,6 +216,11 @@ static void read_properties_from_data( PROPVARIANT *prop, LPBYTE data, DWORD sz 
         propdata = (struct property_data *)&data[ idofs[i].dwOffset ];
 
         /* check we don't run off the end of the data */
+        if (idofs[i].dwOffset + sizeof(DWORD) > sz)
+        {
+            ERR("not enough data\n");
+            break;
+        }
         size = sz - idofs[i].dwOffset - sizeof(DWORD);
         if( sizeof(DWORD) > size ||
             ( propdata->type == VT_FILETIME && sizeof(FILETIME) > size ) ||
@@ -227,7 +233,13 @@ static void read_properties_from_data( PROPVARIANT *prop, LPBYTE data, DWORD sz 
         property.vt = propdata->type;
         if( propdata->type == VT_LPSTR )
         {
-            char *str = malloc( propdata->u.str.len );
+            char *str;
+            if (!propdata->u.str.len)
+            {
+                WARN("zero length string\n");
+                break;
+            }
+            str = malloc( propdata->u.str.len );
             memcpy( str, propdata->u.str.str, propdata->u.str.len );
             str[ propdata->u.str.len - 1 ] = 0;
             property.pszVal = str;
