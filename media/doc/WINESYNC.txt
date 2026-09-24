@@ -96,7 +96,7 @@ dll/win32/initpki             # Synced to Wine-10.0
 dll/win32/inseng              # Synced to WineStaging-4.18
 dll/win32/iphlpapi            # Out of sync
 dll/win32/itircl              # Synced to Wine-10.0
-dll/win32/itss                # Synced to Wine-10.0
+dll/win32/itss                # Synced to Wine-11.18
 dll/win32/jscript             # Synced to Wine-10.0
 dll/win32/jsproxy             # Synced to Wine-10.0
 dll/win32/l3codeca.acm        # Synced to Wine-10.0
@@ -104,7 +104,7 @@ dll/win32/loadperf            # Synced to Wine-10.0
 dll/win32/lz32                # Synced to Wine-10.0
 dll/win32/mapi32              # Synced to Wine-10.0
 dll/win32/mciavi32            # Synced to Wine-11.11
-dll/win32/mcicda              # Synced to Wine-10.0
+dll/win32/mcicda              # Synced to Wine-11.18 (upstream's WIN32_NO_STATUS removal not applied - see below)
 dll/win32/mciqtz32            # Synced to Wine-10.0
 dll/win32/mciseq              # Synced to Wine-10.0
 dll/win32/mciwave             # Synced to Wine-10.0
@@ -147,7 +147,7 @@ dll/win32/msxml4              # Synced to Wine-10.0
 dll/win32/msxml6              # Synced to Wine-10.0
 dll/win32/nddeapi             # Synced to Wine-10.0
 dll/win32/netapi32            # Forked at Wine-1.3.34
-dll/win32/netutils            # Synced to Wine-10.0
+dll/win32/netutils            # Synced to Wine-11.18 (upstream's WIN32_NO_STATUS removal not applied - see below)
 dll/win32/npptools            # Synced to Wine-10.0
 dll/win32/ntdsapi             # Synced to Wine-10.0
 dll/win32/objsel              # Synced to Wine-10.0
@@ -167,7 +167,7 @@ dll/win32/powrprof            # Forked at Wine-1.0rc5
 dll/win32/printui             # Synced to Wine-10.0
 dll/win32/propsys             # Synced to Wine-10.0
 dll/win32/pstorec             # Synced to Wine-10.0
-dll/win32/qmgr                # Synced to Wine-10.0
+dll/win32/qmgr                # Synced to Wine-11.18 (upstream delta was tests/ only)
 dll/win32/qmgrprxy            # Synced to Wine-10.0
 dll/win32/query               # Synced to Wine-10.0
 dll/win32/rasapi32            # Synced to Wine-10.0
@@ -207,7 +207,7 @@ dll/win32/uiautomationcore    # Synced to Wine-10.0
 dll/win32/updspapi            # Synced to Wine-10.0
 dll/win32/url                 # Synced to Wine-10.0
 dll/win32/urlmon              # Synced to Wine-10.0
-dll/win32/usp10               # Synced to WineStaging-4.18
+dll/win32/usp10               # Synced to Wine-11.18 (upstream delta was tests/ only)
 dll/win32/uxtheme             # Forked
 dll/win32/vbscript            # Synced to Wine-10.0
 dll/win32/version             # Synced to WineStaging-4.18 (Requires kernelbase)
@@ -252,7 +252,7 @@ win32ss/printing/monitors/localmon/ui/  # Synced to WineStaging-4.18 (known ther
 ReactOS shares the following programs with Winehq.
 
 base/applications/cmdutils/cscript  # Synced to WineStaging-4.18
-base/applications/cmdutils/reg      # Synced to WineStaging-6.23
+base/applications/cmdutils/reg      # Synced to Wine-11.18
 base/applications/cmdutils/schtasks # Synced to WineStaging-3.3
 base/applications/cmdutils/taskkill # Synced to WineStaging-3.17
 base/applications/cmdutils/wmic     # Synced to WineStaging-4.0
@@ -391,3 +391,37 @@ win32k -
 
 winmm -
   modules/rostests/winetests/winmm      # Synced to WineStaging-4.18
+
+Notes for syncers
+-----------------
+
+WIN32_NO_STATUS is not removable
+    Wine removed "#define WIN32_NO_STATUS" from a number of modules between
+    Wine-10.0 and Wine-11.18 (e.g. dlls/mcicda/mcicda.c,
+    dlls/netutils/main.c). Do NOT carry that removal across.
+
+    In ReactOS both sdk/include/psdk/ntstatus.h and sdk/include/xdk/winnt_old.h
+    wrap their STATUS_* definitions in "#ifndef WIN32_NO_STATUS". The pattern
+    used throughout our wine modules is therefore:
+
+        #include "ntstatus.h"
+        #define WIN32_NO_STATUS
+        #include "windef.h"
+
+    i.e. let ntstatus.h define the codes, then stop winnt.h from defining them
+    a second time. Dropping the define makes both headers try to define the
+    same macros. Wine can drop it because it builds against its own headers.
+
+    When a component's ONLY upstream delta is that removal, there is nothing
+    to take and the entry can simply be marked as synced.
+
+Wine's tests/ directories are not synced here
+    Upstream test suites live in modules/rostests/winetests in our tree, not
+    next to the DLL. A component whose only upstream delta touches tests/ has
+    no source change to take.
+
+Deliberate reductions are not upstream bugs
+    Some modules intentionally carry less than upstream, e.g.
+    base/applications/cmdutils/reg has no REG_QWORD support. Upstream changes
+    that live inside such a removed block cannot be applied and should not be
+    silently re-added; keep the reduction and note it.
