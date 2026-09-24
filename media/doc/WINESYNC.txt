@@ -31,6 +31,7 @@ dll/directx/wine/d3d8           # Synced to WineStaging-3.3
 dll/directx/wine/d3d9           # Synced to WineStaging-3.3
 dll/directx/wine/d3dcompiler_43 # Synced to WineStaging-4.18
 dll/directx/wine/d3drm          # Synced to WineStaging-4.18
+sdk/include/psdk/pdh.h          # Synced to Wine-11.18
 dll/directx/wine/d3dx9_24 => 43 # Synced to WineStaging-6.0-rc5
 dll/directx/wine/d3dxof         # Synced to WineStaging-4.18
 dll/directx/wine/ddraw          # Synced to WineStaging-3.3
@@ -53,7 +54,7 @@ dll/win32/activeds            # Synced to Wine-10.0
 dll/win32/activeds.tlb        # Synced to Wine-10.0
 dll/win32/actxprxy            # Synced to Wine-10.0 (11.18 delta needs psdk/shobjidl.idl)
 dll/win32/advpack             # Synced to Wine-10.0
-dll/win32/atl                 # Synced to Wine-10.0
+dll/win32/atl                 # Synced to Wine-11.18
 dll/win32/atl80               # Synced to Wine-10.0
 dll/win32/atl100              # Synced to Wine-10.0
 dll/win32/avifil32            # Synced to Wine-11.18
@@ -89,7 +90,7 @@ dll/win32/hnetcfg             # Synced to Wine-11.18
 dll/win32/iccvid              # Synced to Wine-11.18
 dll/win32/ieframe             # Synced to WineStaging-4.18
 dll/win32/imaadp32.acm        # Synced to Wine-10.0
-dll/win32/imagehlp            # Synced to Wine-10.0
+dll/win32/imagehlp            # Synced to Wine-11.18 (spec signature churn is cosmetic, see below)
 dll/win32/inetcomm            # Synced to Wine-10.0
 dll/win32/inetmib1            # Synced to Wine-11.18
 dll/win32/initpki             # Synced to Wine-10.0
@@ -161,7 +162,7 @@ dll/win32/oledlg              # Synced to Wine-10.0
 dll/win32/olepro32            # Synced to Wine-10.0
 dll/win32/olesvr32            # Synced to Wine-10.0
 dll/win32/olethk32            # Synced to Wine-10.0
-dll/win32/pdh                 # Synced to Wine-10.0
+dll/win32/pdh                 # Synced to Wine-11.18 (psdk/pdh.h gained the *_ITEM types)
 dll/win32/pidgen              # Synced to Wine-10.0
 dll/win32/powrprof            # Forked at Wine-1.0rc5
 dll/win32/printui             # Synced to Wine-10.0
@@ -203,7 +204,7 @@ dll/win32/t2embed             # Synced to Wine-10.0
 dll/win32/tapi32              # Synced to Wine-11.18 (sources; upstream's new tapi.rc/tapi.rgs registry resource not adopted)
 dll/win32/traffic             # Synced to Wine-10.0
 dll/win32/twain_32            # Synced to Wine-10.0
-dll/win32/uiautomationcore    # Synced to Wine-10.0
+dll/win32/uiautomationcore    # Synced to Wine-11.18
 dll/win32/updspapi            # Synced to Wine-10.0
 dll/win32/url                 # Synced to Wine-10.0
 dll/win32/urlmon              # Synced to Wine-10.0
@@ -236,7 +237,7 @@ dll/win32/xinput1_1           # Synced to WineStaging-2.9
 dll/win32/xinput1_2           # Synced to WineStaging-2.9
 dll/win32/xinput1_3           # Synced to WineStaging-2.9
 dll/win32/xinput9_1_0         # Synced to WineStaging-2.9
-dll/win32/xmllite             # Synced to Wine-10.0
+dll/win32/xmllite             # Synced to Wine-11.18
 dll/win32/xolehlp             # Synced to Wine-10.0
 
 comctl32 -
@@ -260,7 +261,7 @@ base/applications/cmdutils/wscript  # Synced to Wine-11.10
 base/applications/cmdutils/xcopy    # Synced to WineStaging-3.17
 base/applications/games/winmine     # Synced to WineStaging-2.16 with our own resources.
 base/applications/extrac32          # Synced to WineStaging-4.0
-base/applications/iexplore          # Synced to WineStaging-3.3
+base/applications/iexplore          # Synced to Wine-11.18 (kept version resource, see below)
 base/applications/notepad           # Forked at Wine-20041201
 base/applications/winhlp32          # Synced to WineStaging-4.0
 base/applications/wordpad           # Synced to Wine-11.18 (window placement is ours)
@@ -443,6 +444,17 @@ A shared psdk header can block a component sync
     trap applies to any hand-written *_Proxy/_Stub in a *marshal.c file:
     check that the interface is defined in the psdk header the module includes.
 
+    A second form of the same trap: upstream adds the implementation and the
+    type it needs in the same release. dll/win32/pdh gained real
+    PdhGetFormattedCounterArrayA/W and PdhGetRawCounterArrayA/W and a
+    PdhEnumObjectsA/W export, and Wine 11 added PDH_FMT_COUNTERVALUE_ITEM_A/W
+    and PDH_RAW_COUNTER_ITEM_A/W to include/pdh.h to go with them. Our
+    psdk/pdh.h did not have those types, so the sources alone would not
+    compile. The header was updated in the same commit here.
+
+    Note that our pdh.h has dropped Wine's DECL_PDH_TYPE_AW macro, so add the
+    plain _A/_W structs and keep WINELIB_NAME_AW for the generic names.
+
 Check that a file is actually Wine's before merging into it
     A ledger entry names a path, but the code under that path is not
     necessarily Wine's. Some components took only Wine's .rc and .spec and
@@ -482,6 +494,24 @@ Wine moved version resources into its Makefiles
 
     The same reasoning covers a deleted .rc we have no counterpart for at all:
     nothing to do.
+
+A spec's parameter list does not change the built binary
+    It is natural to worry when upstream rewrites a .spec parameter list,
+    e.g. imagehlp.spec changing several -import entries from (long long) to
+    (long ptr) between Wine 10.0 and 11.18. In ReactOS those changes are
+    cosmetic:
+
+      - sdk/tools/spec2def/spec2def.c writes the stdcall suffix from
+        pexp->nStackBytes only when giArch == ARCH_X86; for every other
+        architecture it prints the undecorated name and never looks at the
+        argument sizes.
+      - On i386 long and ptr are both 4 bytes, so nStackBytes is unchanged
+        and the decoration is identical either way.
+
+    So a spec parameter list cannot introduce an argument-size mismatch, and
+    taking upstream's is safe. It also does not have to agree with the
+    signature our own dbghelp.spec lists for the same forwarded function,
+    though there is no harm in aligning them.
 
 Wordpad keeps its own window placement
     Wine-11.18 replaces wordpad's manual MonitorFromRect/IntersectRect
