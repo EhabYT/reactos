@@ -462,6 +462,27 @@ Check that a file is actually Wine's before merging into it
     normally. Diff the file against the Wine baseline and look at how much is
     unchanged before trusting a merge.
 
+Wine moved version resources into its Makefiles
+    From Wine 11 onwards, version information often no longer lives in the
+    module's .rc file. It moved to the Makefile as
+
+        VER_PRODUCTVERSION = 5,1,2600,2180
+
+    which Wine's own makedep turns into a generated resource, and the .rc file
+    was deleted upstream. ReactOS's CMake build has no equivalent mechanism,
+    and our .rc files are named explicitly in CMakeLists.txt, so the deletion
+    is not something to follow: keep the local .rc.
+
+    A component whose only upstream delta is such a deletion has nothing to
+    take and can be marked as synced. As of Wine-11.18 that applies to
+    comcat, lz32, mciqtz32, mspatcha, objsel, olepro32, olethk32, rsabase,
+    shfolder, stdole2.tlb, stdole32.tlb, version and others. Check whether the
+    deleted .rc still exists locally and is referenced by CMakeLists.txt
+    before concluding anything.
+
+    The same reasoning covers a deleted .rc we have no counterpart for at all:
+    nothing to do.
+
 Wordpad keeps its own window placement
     Wine-11.18 replaces wordpad's manual MonitorFromRect/IntersectRect
     clamping with a WINDOWPLACEMENT and SetWindowPlacement in WinMain. Ours
