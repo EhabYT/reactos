@@ -51,7 +51,7 @@ dll/directx/wine/wined3d        # Synced to WineStaging-3.3
 
 dll/win32/activeds            # Synced to Wine-10.0
 dll/win32/activeds.tlb        # Synced to Wine-10.0
-dll/win32/actxprxy            # Synced to Wine-10.0
+dll/win32/actxprxy            # Synced to Wine-10.0 (11.18 delta needs psdk/shobjidl.idl)
 dll/win32/advpack             # Synced to Wine-10.0
 dll/win32/atl                 # Synced to Wine-10.0
 dll/win32/atl80               # Synced to Wine-10.0
@@ -72,8 +72,8 @@ dll/win32/credui              # Synced to Wine-10.0
 dll/win32/crypt32             # Synced to Wine-10.0
 dll/win32/cryptdlg            # Synced to Wine-10.0
 dll/win32/cryptdll            # Synced to Wine-10.0
-dll/win32/cryptnet            # Synced to Wine-10.0
-dll/win32/cryptui             # Synced to Wine-10.0
+dll/win32/cryptnet            # Synced to Wine-11.18
+dll/win32/cryptui             # Synced to Wine-11.18
 dll/win32/dbgeng              # Synced to Wine-10.0
 dll/win32/dbghelp             # Synced to WineStaging-5.16
 dll/win32/dciman32            # Synced to Wine-10.0
@@ -111,7 +111,7 @@ dll/win32/mciwave             # Synced to Wine-10.0
 dll/win32/mgmtapi             # Synced to Wine-10.0
 dll/win32/mlang               # Synced to Wine-11.18
 dll/win32/mmdevapi            # Synced to WineStaging-4.18
-dll/win32/mpr                 # Synced to WineStaging-4.18
+dll/win32/mpr                 # Synced to Wine-11.18 (mpr.rc, mpr.spec are ours)
 dll/win32/mprapi              # Synced to Wine-10.0
 dll/win32/msacm32             # Synced to WineStaging-4.18
 dll/win32/msacm32.drv         # Synced to Wine-10.0
@@ -152,7 +152,7 @@ dll/win32/npptools            # Synced to Wine-10.0
 dll/win32/ntdsapi             # Synced to Wine-11.18
 dll/win32/objsel              # Synced to Wine-10.0
 dll/win32/odbc32              # Synced to WineStaging-4.18. Depends on port of Linux ODBC.
-dll/win32/odbccp32            # Synced to Wine-10.0
+dll/win32/odbccp32            # Synced to Wine-11.18
 dll/win32/ole32               # Synced to Wine-10.0
 dll/win32/oleacc              # Synced to Wine-11.18
 dll/win32/oleaut32            # Synced to Wine-10.0
@@ -263,7 +263,7 @@ base/applications/extrac32          # Synced to WineStaging-4.0
 base/applications/iexplore          # Synced to WineStaging-3.3
 base/applications/notepad           # Forked at Wine-20041201
 base/applications/winhlp32          # Synced to WineStaging-4.0
-base/applications/wordpad           # Synced to WineStaging-1.9.16
+base/applications/wordpad           # Synced to Wine-11.18 (window placement is ours)
 base/applications/write             # Synced to WineStaging-3.3
 base/services/rpcss                 # Synced to Wine-10.0
 base/system/expand                  # Synced to WineStaging-3.3
@@ -425,3 +425,46 @@ Deliberate reductions are not upstream bugs
     base/applications/cmdutils/reg has no REG_QWORD support. Upstream changes
     that live inside such a removed block cannot be applied and should not be
     silently re-added; keep the reduction and note it.
+
+A shared psdk header can block a component sync
+    Some Wine modules call proxy helpers that widl generates from a shared
+    interface description in sdk/include/psdk. If the interface is not defined
+    there, the generated helper does not exist and the upstream code cannot
+    compile, however self-contained it looks.
+
+    dll/win32/actxprxy is the current example. Wine-11.18 adds
+    IEnumObjects_Next_Proxy and IEnumObjects_Next_Stub to usrmarshal.c, but
+    sdk/include/psdk/shobjidl.idl only forward-declares IEnumObjects inside a
+    coclass - there is no "interface IEnumObjects : IUnknown" block, so
+    IEnumObjects_RemoteNext_Proxy is never generated and the type is
+    incomplete. The hunk on its own would not build.
+
+    Take the header change first, or leave the component where it is. The same
+    trap applies to any hand-written *_Proxy/_Stub in a *marshal.c file:
+    check that the interface is defined in the psdk header the module includes.
+
+Check that a file is actually Wine's before merging into it
+    A ledger entry names a path, but the code under that path is not
+    necessarily Wine's. Some components took only Wine's .rc and .spec and
+    keep a ReactOS implementation of the code; some programs were forked long
+    ago. A three-way merge against a Wine baseline happily "applies" hunks
+    from a different program and produces nonsense.
+
+    Measured against Wine-11.18, these are NOT mergeable:
+
+        dll/win32/version/version.c     ~20% shared with Wine's version.c
+        base/applications/notepad       ~29% shared; forked at Wine-20041201
+        dll/win32/mpr/mpr.rc            ~24% shared; our file is the
+                                        language-include layout
+
+    whereas dll/win32/mpr/wnet.c (89%), base/applications/wordpad (92%) and
+    the odbccp32/cryptnet/cryptui sources (99-100%) are Wine's code and merge
+    normally. Diff the file against the Wine baseline and look at how much is
+    unchanged before trusting a merge.
+
+Wordpad keeps its own window placement
+    Wine-11.18 replaces wordpad's manual MonitorFromRect/IntersectRect
+    clamping with a WINDOWPLACEMENT and SetWindowPlacement in WinMain. Ours
+    uses ReactOS's class and title strings and its own rect handling, so only
+    the SW_SHOW/SW_HIDE changes were taken; the placement rework was left
+    out.
