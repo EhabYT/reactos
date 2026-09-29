@@ -35,6 +35,8 @@ BEGIN
 
     IDS_HIDETABS     "Ascunde ta&buri"
     IDS_SHOWTABS     "Afișează ta&buri"
+
+    IDS_SELECT_TOPIC "Select Topic"
 END
 
 STRINGTABLE

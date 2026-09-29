@@ -33,6 +33,8 @@ BEGIN
 
     IDS_HIDETABS     "隐藏选项卡(&T)"
     IDS_SHOWTABS     "显示选项卡(&T)"
+
+    IDS_SELECT_TOPIC "Select Topic"
 END
 
 STRINGTABLE

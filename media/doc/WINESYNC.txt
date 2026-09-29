@@ -86,7 +86,7 @@ dll/win32/feclient            # Synced to Wine-10.0
 dll/win32/fontsub             # Synced to Wine-10.0
 dll/win32/fusion              # Synced to Wine-11.18 (WIN32_NO_STATUS in assembly.c kept - see below)
 dll/win32/gdiplus             # Synced to Wine-10.0
-dll/win32/hhctrl.ocx          # Synced to Wine-10.0
+dll/win32/hhctrl.ocx          # Synced to Wine-11.18 (resource strings live in lang/*.rc here - see below)
 dll/win32/hlink               # Synced to Wine-10.0
 dll/win32/hnetcfg             # Synced to Wine-11.18
 dll/win32/iccvid              # Synced to Wine-11.18
@@ -662,6 +662,30 @@ Wine moved version resources into its Makefiles
 
     The same reasoning covers a deleted .rc we have no counterpart for at all:
     nothing to do.
+
+A new resource string lands in every language file
+    Wine keeps one English STRINGTABLE inside the module's .rc. ReactOS moved
+    hhctrl.ocx's strings out into lang/*.rc, one per language, selected by
+    #ifdef LANGUAGE_xx in hhctrl.rc. So when Wine 11.18 added
+
+        IDS_SELECT_TOPIC "Select Topic"
+
+    there was no upstream .rc hunk to take: the merge conflicts against our
+    include list and the answer is simply to drop the upstream block, because
+    the strings it carries are all in the language files already.
+
+    The string still has to reach the other twenty-five files or the feature
+    degrades quietly rather than failing to build. help.c calls
+    HH_LoadString(IDS_SELECT_TOPIC) for the index popup's caption, and
+    HH_LoadString returns an empty string when LoadStringW finds nothing - no
+    crash, no warning, just an untitled window in every language that lacks
+    the id. The id was added to all twenty-six, English text where there is no
+    translation yet, which is how IDS_DEFTITLE was handled before (De.rc and
+    Ru.rc carry "HTML Help" untranslated while Fr.rc has "Aide HTML").
+
+    The same shape will apply to any component whose resources we
+    externalized. Check for a lang/ subdirectory next to the .rc before
+    assuming an upstream resource hunk can be applied as-is.
 
 A spec is only mergeable if the ordinals still line up
     uxtheme is the clearest case. Wine 11 adds four Immersive colour
