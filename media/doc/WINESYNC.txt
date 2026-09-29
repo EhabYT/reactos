@@ -220,7 +220,7 @@ dll/win32/wbemprox            # Synced to WineStaging-4.18
 dll/win32/windowscodecs       # Synced to Wine-10.0
 dll/win32/windowscodecsext    # Synced to Wine-10.0
 dll/win32/wing32              # Synced to Wine-10.0
-dll/win32/winhttp             # Synced to Wine-10.0
+dll/win32/winhttp             # Synced to Wine-11.18 (socket.c taken, rsrc.rc kept - see below)
 dll/win32/wininet             # Synced to WineStaging-6.0rc1
 dll/win32/winmm               # Forked at Wine-20050628 (mci.c synced to Wine-11.18)
 dll/win32/winmm/midimap       # Forked at Wine-20050628
@@ -514,6 +514,23 @@ Picking hunks out of a forked file
     should be done deliberately against our own host handling rather than
     merged out of a diff.
 
+A new file can be the point of the change
+    Wine 11.18's winhttp delta reads like a deletion: request.c loses 1640
+    lines and gains 751. The lines did not go away, they moved into a new
+    socket.c, and that file is not optional - it is where the six exported
+    WinHttpWebSocket* functions now live. Taking only the existing files
+    would have left winhttp.spec exporting six functions with no definitions
+    anywhere.
+
+    The clue is to follow the exports, not the line counts. Before deciding a
+    new upstream file is groundwork, check whether anything the tree already
+    exports has moved into it.
+
+    Two smaller instances of the same shape are recorded above: Wine sometimes
+    adds a file that nothing calls (mscms's rsrc.rc) and sometimes moves code
+    a spec depends on (here). The difference is whether the module's own
+    public surface reaches it.
+
 A shared psdk header can block a component sync
     Some Wine modules call proxy helpers that widl generates from a shared
     interface description in sdk/include/psdk. If the interface is not defined
@@ -547,6 +564,13 @@ A shared psdk header can block a component sync
 
     Note that our pdh.h has dropped Wine's DECL_PDH_TYPE_AW macro, so add the
     plain _A/_W structs and keep WINELIB_NAME_AW for the generic names.
+
+    winhttp is the third instance, and the value needed came from the public
+    header rather than a private one: socket.c compares against
+    WINHTTP_HANDLE_TYPE_WEBSOCKET, which Wine added to include/winhttp.h
+    after 10.0. Our psdk/winhttp.h stopped at REQUEST. The single value was
+    added; PROXY_RESOLVER and PROTOCOL, which upstream defines alongside it,
+    are not used by any code here and stay out.
 
     bluetoothapis is the largest instance so far, and it is deferred rather
     than attempted. Wine 11 turns the BluetoothFindFirstDevice,
