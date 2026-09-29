@@ -455,6 +455,7 @@ static HRESULT WINAPI factory_QueryInterface( IClassFactory *iface, REFIID riid,
         return S_OK;
     }
     FIXME( "interface %s not implemented\n", debugstr_guid(riid) );
+    *obj = NULL;
     return E_NOINTERFACE;
 }
 

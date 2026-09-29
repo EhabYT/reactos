@@ -802,8 +802,7 @@ static UINT dialog_text_control( msi_dialog *dialog, MSIRECORD *rec )
 
     TRACE("%p %p\n", dialog, rec);
 
-    control = dialog_add_control( dialog, rec, L"Static", SS_LEFT | WS_GROUP );
-    if( !control )
+    if (!(control = dialog_add_control( dialog, rec, L"Static", SS_LEFT | WS_GROUP )))
         return ERROR_FUNCTION_FAILED;
 
     info = malloc( sizeof *info );
@@ -1029,10 +1028,7 @@ static UINT dialog_button_control( msi_dialog *dialog, MSIRECORD *rec )
         }
     }
 
-    control = dialog_add_control( dialog, rec, L"BUTTON", style );
-    if (!control)
-        return ERROR_FUNCTION_FAILED;
-
+    if (!(control = dialog_add_control( dialog, rec, L"BUTTON", style ))) return ERROR_FUNCTION_FAILED;
     control->handler = dialog_button_handler;
 
     if (attributes & msidbControlAttributesIcon)
@@ -1149,9 +1145,11 @@ static UINT dialog_checkbox_control( msi_dialog *dialog, MSIRECORD *rec )
 
     TRACE("%p %p\n", dialog, rec);
 
-    control = dialog_add_control( dialog, rec, L"BUTTON", BS_CHECKBOX | BS_MULTILINE | WS_TABSTOP );
+    if (!(control = dialog_add_control( dialog, rec, L"BUTTON", BS_CHECKBOX | BS_MULTILINE | WS_TABSTOP )))
+        return ERROR_FUNCTION_FAILED;
     control->handler = dialog_checkbox_handler;
     control->update = dialog_checkbox_sync_state;
+
     prop = MSI_RecordGetString( rec, 9 );
     if (prop)
     {
@@ -1165,9 +1163,7 @@ static UINT dialog_checkbox_control( msi_dialog *dialog, MSIRECORD *rec )
 
 static UINT dialog_line_control( msi_dialog *dialog, MSIRECORD *rec )
 {
-    if (!dialog_add_control( dialog, rec, L"Static", SS_ETCHEDHORZ | SS_SUNKEN))
-        return ERROR_FUNCTION_FAILED;
-
+    if (!dialog_add_control( dialog, rec, L"Static", SS_ETCHEDHORZ | SS_SUNKEN)) return ERROR_FUNCTION_FAILED;
     return ERROR_SUCCESS;
 }
 
@@ -1183,7 +1179,7 @@ struct msi_scrolltext_info
 static LRESULT WINAPI MSIScrollText_WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
     struct msi_scrolltext_info *info;
-    HRESULT r;
+    LRESULT r;
 
     TRACE( "%p %04x %#Ix %#Ix\n", hWnd, msg, wParam, lParam );
 
@@ -1261,10 +1257,9 @@ static UINT dialog_scrolltext_control( msi_dialog *dialog, MSIRECORD *rec )
 
     hRichedit = LoadLibraryA("riched20");
 
-    style = WS_BORDER | ES_MULTILINE | WS_VSCROLL |
-            ES_READONLY | ES_AUTOVSCROLL | WS_TABSTOP;
-    control = dialog_add_control( dialog, rec, L"RichEdit20W", style );
-    if (!control)
+    style = WS_BORDER | ES_MULTILINE | WS_VSCROLL | ES_READONLY | ES_AUTOVSCROLL | WS_TABSTOP;
+
+    if (!(control = dialog_add_control( dialog, rec, L"RichEdit20W", style )))
     {
         FreeLibrary( hRichedit );
         free( info );
@@ -1306,7 +1301,7 @@ static UINT dialog_bitmap_control( msi_dialog *dialog, MSIRECORD *rec )
         style |= SS_CENTERIMAGE;
     }
 
-    control = dialog_add_control( dialog, rec, L"Static", style );
+    if (!(control = dialog_add_control( dialog, rec, L"Static", style ))) return ERROR_FUNCTION_FAILED;
     cx = MSI_RecordGetInteger( rec, 6 );
     cy = MSI_RecordGetInteger( rec, 7 );
     cx = dialog_scale_unit( dialog, cx );
@@ -1333,7 +1328,8 @@ static UINT dialog_icon_control( msi_dialog *dialog, MSIRECORD *rec )
 
     TRACE("\n");
 
-    control = dialog_add_control( dialog, rec, L"Static", SS_ICON | SS_CENTERIMAGE | WS_GROUP );
+    if (!(control = dialog_add_control( dialog, rec, L"Static", SS_ICON | SS_CENTERIMAGE | WS_GROUP )))
+        return ERROR_FUNCTION_FAILED;
 
     attributes = MSI_RecordGetInteger( rec, 8 );
     name = get_binary_name( dialog->package, rec );
@@ -1363,6 +1359,8 @@ static LRESULT WINAPI MSIComboBox_WndProc(HWND hWnd, UINT msg, WPARAM wParam, LP
     struct msi_combobox_info *info;
     LRESULT r;
     DWORD j;
+    LPWSTR value, text = NULL;
+    INT index, len;
 
     TRACE( "%p %04x %#Ix %#Ix\n", hWnd, msg, wParam, lParam );
 
@@ -1374,6 +1372,31 @@ static LRESULT WINAPI MSIComboBox_WndProc(HWND hWnd, UINT msg, WPARAM wParam, LP
 
     switch (msg)
     {
+    case WM_COMMAND:
+        if (HIWORD(wParam) == CBN_SELCHANGE)
+        {
+            index = SendMessageW( hWnd, CB_GETCURSEL, 0, 0 );
+            if (index != CB_ERR)
+            {
+                value = (LPWSTR)SendMessageW( hWnd, CB_GETITEMDATA, index, 0 );
+                if (value) SetWindowTextW( hWnd, value );
+                else
+                {
+                    len = (INT)SendMessageW( hWnd, CB_GETLBTEXTLEN, index, 0 );
+                    if (len != CB_ERR && len >= 0)
+                    {
+                        text = (LPWSTR)malloc( (len + 1) * sizeof(WCHAR) );
+                        if (text)
+                        {
+                            SendMessageW( hWnd, CB_GETLBTEXT, index, (LPARAM)text );
+                            SetWindowTextW( hWnd, text );
+                            free( text );
+                        }
+                    }
+                }
+            }
+        }
+        break;
     case WM_NCDESTROY:
         for (j = 0; j < info->num_items; j++)
             free( info->items[j] );
@@ -1397,11 +1420,7 @@ static UINT combobox_add_item( MSIRECORD *rec, void *param )
 
     info->items[info->addpos_items] = wcsdup( value );
 
-#ifdef __REACTOS__ /* Import fix from Wine-11.6 */
     pos = SendMessageW( info->hwnd, CB_ADDSTRING, 0, (LPARAM)(text ? text : value) );
-#else
-    pos = SendMessageW( info->hwnd, CB_ADDSTRING, 0, (LPARAM)text );
-#endif
     SendMessageW( info->hwnd, CB_SETITEMDATA, pos, (LPARAM)info->items[info->addpos_items] );
     info->addpos_items++;
 
@@ -1514,7 +1533,8 @@ static UINT dialog_combobox_handler( msi_dialog *dialog, struct control *control
 static void dialog_combobox_update( msi_dialog *dialog, struct control *control )
 {
     struct msi_combobox_info *info;
-    LPWSTR value, tmp;
+    LPWSTR value, tmp, text = NULL;
+    INT len;
     DWORD j;
 
     info = GetPropW( control->hwnd, L"MSIDATA" );
@@ -1528,21 +1548,31 @@ static void dialog_combobox_update( msi_dialog *dialog, struct control *control 
 
     for (j = 0; j < info->num_items; j++)
     {
-        tmp = (LPWSTR) SendMessageW( control->hwnd, CB_GETITEMDATA, j, 0 );
-        if (!wcscmp( value, tmp ))
-            break;
+        tmp = (LPWSTR)SendMessageW( control->hwnd, CB_GETITEMDATA, j, 0 );
+        if (!tmp)
+        {
+            len = (INT)SendMessageW( control->hwnd, CB_GETLBTEXTLEN, j, 0 );
+            if (len != CB_ERR && len >= 0)
+            {
+                text = (LPWSTR)malloc( (len + 1) * sizeof(WCHAR) );
+                if (text)
+                SendMessageW( control->hwnd, CB_GETLBTEXT, j, (LPARAM)text );
+            }
+        }
+
+        if ((tmp && !wcscmp( value, tmp )) || (text && !wcscmp( value, text )))
+        {
+            SendMessageW( control->hwnd, CB_SETCURSEL, j, 0 );
+            SetWindowTextW( control->hwnd, tmp ? tmp : text );
+            free( value );
+            if (text) free( text );
+            return;
+        }
+        if (text) free( text );
     }
 
-    if (j < info->num_items)
-    {
-        SendMessageW( control->hwnd, CB_SETCURSEL, j, 0 );
-    }
-    else
-    {
-        SendMessageW( control->hwnd, CB_SETCURSEL, -1, 0 );
-        SetWindowTextW( control->hwnd, value );
-    }
-
+    SendMessageW( control->hwnd, CB_SETCURSEL, -1, 0 );
+    SetWindowTextW( control->hwnd, value );
     free( value );
 }
 
@@ -1566,8 +1596,7 @@ static UINT dialog_combo_control( msi_dialog *dialog, MSIRECORD *rec )
     else
         style |= CBS_DROPDOWN;
 
-    control = dialog_add_control( dialog, rec, WC_COMBOBOXW, style );
-    if (!control)
+    if (!(control = dialog_add_control( dialog, rec, WC_COMBOBOXW, style )))
     {
         free( info );
         return ERROR_FUNCTION_FAILED;
@@ -1623,7 +1652,8 @@ static UINT dialog_edit_control( msi_dialog *dialog, MSIRECORD *rec )
     WCHAR num[MAX_NUM_DIGITS];
     DWORD limit;
 
-    control = dialog_add_control( dialog, rec, L"Edit", WS_BORDER | WS_TABSTOP | ES_AUTOHSCROLL );
+    if (!(control = dialog_add_control( dialog, rec, L"Edit", WS_BORDER | WS_TABSTOP | ES_AUTOHSCROLL )))
+        return ERROR_FUNCTION_FAILED;
     control->handler = dialog_edit_handler;
 
     text = MSI_RecordGetString( rec, 10 );
@@ -1764,7 +1794,7 @@ static void mask_next_control( struct msi_maskedit_info *info, HWND hWnd )
 static LRESULT WINAPI MSIMaskedEdit_WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
     struct msi_maskedit_info *info;
-    HRESULT r;
+    LRESULT r;
 
     TRACE("%p %04x %#Ix %#Ix\n", hWnd, msg, wParam, lParam);
 
@@ -1952,8 +1982,7 @@ static UINT dialog_maskedit_control( msi_dialog *dialog, MSIRECORD *rec )
 
     info->dialog = dialog;
 
-    control = dialog_add_control( dialog, rec, L"Static", SS_OWNERDRAW | WS_GROUP | WS_VISIBLE );
-    if( !control )
+    if (!(control = dialog_add_control( dialog, rec, L"Static", SS_OWNERDRAW | WS_GROUP | WS_VISIBLE )))
     {
         ERR("Failed to create maskedit container\n");
         ret = ERROR_FUNCTION_FAILED;
@@ -2004,9 +2033,7 @@ static UINT dialog_progress_bar( msi_dialog *dialog, MSIRECORD *rec )
     if( !(attributes & msidbControlAttributesProgress95) )
         style |= PBS_SMOOTH;
 
-    control = dialog_add_control( dialog, rec, PROGRESS_CLASSW, style );
-    if( !control )
-        return ERROR_FUNCTION_FAILED;
+    if (!(control = dialog_add_control( dialog, rec, PROGRESS_CLASSW, style ))) return ERROR_FUNCTION_FAILED;
 
     event_subscribe( dialog, L"SetProgress", control->name, L"Progress" );
     return ERROR_SUCCESS;
@@ -2127,7 +2154,8 @@ static UINT dialog_pathedit_control( msi_dialog *dialog, MSIRECORD *rec )
     if (!info)
         return ERROR_FUNCTION_FAILED;
 
-    control = dialog_add_control( dialog, rec, L"Edit", WS_BORDER | WS_TABSTOP );
+    if (!(control = dialog_add_control( dialog, rec, L"Edit", WS_BORDER | WS_TABSTOP )))
+        return ERROR_FUNCTION_FAILED;
     control->attributes = MSI_RecordGetInteger( rec, 8 );
     prop = MSI_RecordGetString( rec, 9 );
     control->property = dialog_dup_property( dialog, prop, FALSE );
@@ -2235,9 +2263,7 @@ static UINT dialog_radiogroup_control( msi_dialog *dialog, MSIRECORD *rec )
         style |= BS_OWNERDRAW;
 
     /* Create parent group box to hold radio buttons */
-    control = dialog_add_control( dialog, rec, L"BUTTON", style );
-    if( !control )
-        return ERROR_FUNCTION_FAILED;
+    if (!(control = dialog_add_control( dialog, rec, L"BUTTON", style ))) return ERROR_FUNCTION_FAILED;
 
     oldproc = (WNDPROC) SetWindowLongPtrW( control->hwnd, GWLP_WNDPROC,
                                            (LONG_PTR)MSIRadioGroup_WndProc );
@@ -2387,7 +2413,7 @@ static LRESULT WINAPI MSISelectionTree_WndProc(HWND hWnd, UINT msg, WPARAM wPara
 {
     struct msi_selection_tree_info *info;
     TVHITTESTINFO tvhti;
-    HRESULT r;
+    LRESULT r;
 
     TRACE("%p %04x %#Ix %#Ix\n", hWnd, msg, wParam, lParam);
 
@@ -2573,10 +2599,8 @@ static UINT dialog_selection_tree( msi_dialog *dialog, MSIRECORD *rec )
         return ERROR_FUNCTION_FAILED;
 
     /* create the treeview control */
-    style = TVS_HASLINES | TVS_HASBUTTONS | TVS_LINESATROOT;
-    style |= WS_GROUP | WS_VSCROLL | WS_TABSTOP;
-    control = dialog_add_control( dialog, rec, WC_TREEVIEWW, style );
-    if (!control)
+    style = TVS_HASLINES | TVS_HASBUTTONS | TVS_LINESATROOT | WS_GROUP | WS_VSCROLL | WS_TABSTOP;
+    if (!(control = dialog_add_control( dialog, rec, WC_TREEVIEWW, style )))
     {
         free(info);
         return ERROR_FUNCTION_FAILED;
@@ -2609,13 +2633,9 @@ static UINT dialog_selection_tree( msi_dialog *dialog, MSIRECORD *rec )
 static UINT dialog_group_box( msi_dialog *dialog, MSIRECORD *rec )
 {
     struct control *control;
-    DWORD style;
+    DWORD style = BS_GROUPBOX | WS_CHILD | WS_GROUP;
 
-    style = BS_GROUPBOX | WS_CHILD | WS_GROUP;
-    control = dialog_add_control( dialog, rec, WC_BUTTONW, style );
-    if (!control)
-        return ERROR_FUNCTION_FAILED;
-
+    if (!(control = dialog_add_control( dialog, rec, WC_BUTTONW, style ))) return ERROR_FUNCTION_FAILED;
     return ERROR_SUCCESS;
 }
 
@@ -2738,8 +2758,7 @@ static UINT dialog_list_box( msi_dialog *dialog, MSIRECORD *rec )
     if (~attributes & msidbControlAttributesSorted)
         style |= LBS_SORT;
 
-    control = dialog_add_control( dialog, rec, WC_LISTBOXW, style );
-    if (!control)
+    if (!(control = dialog_add_control( dialog, rec, WC_LISTBOXW, style )))
     {
         free(info);
         return ERROR_FUNCTION_FAILED;
@@ -2793,9 +2812,8 @@ static UINT dialog_directory_combo( msi_dialog *dialog, MSIRECORD *rec )
     /* FIXME: use CBS_OWNERDRAWFIXED and add owner draw code */
     style = CBS_DROPDOWNLIST | CBS_HASSTRINGS | WS_CHILD |
             WS_GROUP | WS_TABSTOP | WS_VSCROLL;
-    control = dialog_add_control( dialog, rec, WC_COMBOBOXW, style );
-    if (!control)
-        return ERROR_FUNCTION_FAILED;
+
+    if (!(control = dialog_add_control( dialog, rec, WC_COMBOBOXW, style ))) return ERROR_FUNCTION_FAILED;
 
     control->attributes = MSI_RecordGetInteger( rec, 8 );
     prop = MSI_RecordGetString( rec, 9 );
@@ -3011,9 +3029,8 @@ static UINT dialog_directory_list( msi_dialog *dialog, MSIRECORD *rec )
     style = LVS_LIST | WS_VSCROLL | LVS_SHAREIMAGELISTS | LVS_EDITLABELS |
             LVS_AUTOARRANGE | LVS_SINGLESEL | WS_BORDER |
             LVS_SORTASCENDING | WS_CHILD | WS_GROUP | WS_TABSTOP;
-    control = dialog_add_control( dialog, rec, WC_LISTVIEWW, style );
-    if (!control)
-        return ERROR_FUNCTION_FAILED;
+
+    if (!(control = dialog_add_control( dialog, rec, WC_LISTVIEWW, style ))) return ERROR_FUNCTION_FAILED;
 
     control->attributes = MSI_RecordGetInteger( rec, 8 );
     control->handler = dialog_dirlist_handler;
@@ -3134,7 +3151,7 @@ static LONGLONG vcl_get_cost( msi_dialog *dialog )
 static void dialog_vcl_add_drives( msi_dialog *dialog, struct control *control )
 {
     ULARGE_INTEGER total, unused;
-    LONGLONG difference, cost;
+    LONGLONG cost;
     WCHAR size_text[MAX_PATH];
     WCHAR cost_text[MAX_PATH];
     LPWSTR drives, ptr;
@@ -3161,10 +3178,11 @@ static void dialog_vcl_add_drives( msi_dialog *dialog, struct control *control )
     while (*ptr)
     {
 #ifdef __REACTOS__
-        if (GetDriveTypeW(ptr) != DRIVE_FIXED)
+        if (GetDriveTypeW(ptr) != DRIVE_FIXED ||
+            !GetDiskFreeSpaceExW(ptr, &unused, &total, NULL))
 #else
-        if (GetVolumeInformationW(ptr, NULL, 0, NULL, 0, &flags, NULL, 0) &&
-            flags & FILE_READ_ONLY_VOLUME)
+        if (!GetVolumeInformationW(ptr, NULL, 0, NULL, 0, &flags, NULL, 0) || (flags & FILE_READ_ONLY_VOLUME) ||
+            !GetDiskFreeSpaceExW(ptr, &unused, &total, NULL))
 #endif
         {
             ptr += lstrlenW(ptr) + 1;
@@ -3177,9 +3195,6 @@ static void dialog_vcl_add_drives( msi_dialog *dialog, struct control *control )
         lvitem.pszText = ptr;
         lvitem.cchTextMax = lstrlenW(ptr) + 1;
         SendMessageW( control->hwnd, LVM_INSERTITEMW, 0, (LPARAM)&lvitem );
-
-        GetDiskFreeSpaceExW(ptr, &unused, &total, NULL);
-        difference = unused.QuadPart - cost;
 
         StrFormatByteSizeW(total.QuadPart, size_text, MAX_PATH);
         lvitem.iSubItem = 1;
@@ -3198,7 +3213,7 @@ static void dialog_vcl_add_drives( msi_dialog *dialog, struct control *control )
         lvitem.cchTextMax = lstrlenW(cost_text) + 1;
         SendMessageW( control->hwnd, LVM_SETITEMW, 0, (LPARAM)&lvitem );
 
-        StrFormatByteSizeW(difference, size_text, MAX_PATH);
+        StrFormatByteSizeW(unused.QuadPart - cost, size_text, MAX_PATH);
         lvitem.iSubItem = 4;
         lvitem.pszText = size_text;
         lvitem.cchTextMax = lstrlenW(size_text) + 1;
@@ -3219,9 +3234,8 @@ static UINT dialog_volumecost_list( msi_dialog *dialog, MSIRECORD *rec )
     style = LVS_REPORT | WS_VSCROLL | WS_HSCROLL | LVS_SHAREIMAGELISTS |
             LVS_AUTOARRANGE | LVS_SINGLESEL | WS_BORDER |
             WS_CHILD | WS_TABSTOP | WS_GROUP;
-    control = dialog_add_control( dialog, rec, WC_LISTVIEWW, style );
-    if (!control)
-        return ERROR_FUNCTION_FAILED;
+
+    if (!(control = dialog_add_control( dialog, rec, WC_LISTVIEWW, style ))) return ERROR_FUNCTION_FAILED;
 
     dialog_vcl_add_columns( dialog, control, rec );
     dialog_vcl_add_drives( dialog, control );
@@ -3292,9 +3306,8 @@ static UINT dialog_volumeselect_combo( msi_dialog *dialog, MSIRECORD *rec )
     style = WS_CHILD | WS_VISIBLE | WS_GROUP | WS_TABSTOP |
             CBS_DROPDOWNLIST | CBS_SORT | CBS_HASSTRINGS |
             WS_EX_LEFT | WS_EX_LTRREADING | WS_EX_RIGHTSCROLLBAR;
-    control = dialog_add_control( dialog, rec, WC_COMBOBOXW, style );
-    if (!control)
-        return ERROR_FUNCTION_FAILED;
+
+    if (!(control = dialog_add_control( dialog, rec, WC_COMBOBOXW, style ))) return ERROR_FUNCTION_FAILED;
 
     control->attributes = MSI_RecordGetInteger( rec, 8 );
     control->handler = dialog_volsel_handler;
@@ -3356,12 +3369,10 @@ static UINT dialog_hyperlink( msi_dialog *dialog, MSIRECORD *rec )
     struct control *control;
     DWORD style = WS_CHILD | WS_TABSTOP | WS_GROUP;
     const WCHAR *text = MSI_RecordGetString( rec, 10 );
-    int len = lstrlenW( text );
+    int len = text ? wcslen( text ) : 0;
     LITEM item;
 
-    control = dialog_add_control( dialog, rec, WC_LINK, style );
-    if (!control)
-        return ERROR_FUNCTION_FAILED;
+    if (!(control = dialog_add_control( dialog, rec, WC_LINK, style ))) return ERROR_FUNCTION_FAILED;
 
     control->attributes = MSI_RecordGetInteger( rec, 8 );
     control->handler    = dialog_hyperlink_handler;
@@ -3370,7 +3381,7 @@ static UINT dialog_hyperlink( msi_dialog *dialog, MSIRECORD *rec )
     item.iLink     = 0;
     item.state     = LIS_ENABLED;
     item.stateMask = LIS_ENABLED;
-    if (len < L_MAX_URL_LENGTH) lstrcpyW( item.szUrl, text );
+    if (text && len < L_MAX_URL_LENGTH) wcscpy( item.szUrl, text );
     else item.szUrl[0] = 0;
 
     SendMessageW( control->hwnd, LM_SETITEM, 0, (LPARAM)&item );
@@ -3448,9 +3459,8 @@ static UINT dialog_listview( msi_dialog *dialog, MSIRECORD *rec )
     attributes = MSI_RecordGetInteger( rec, 8 );
     if ( ~attributes & msidbControlAttributesSorted )
         style |= LVS_SORTASCENDING;
-    control = dialog_add_control( dialog, rec, WC_LISTVIEWW, style );
-    if (!control)
-        return ERROR_FUNCTION_FAILED;
+
+    if (!(control = dialog_add_control( dialog, rec, WC_LISTVIEWW, style ))) return ERROR_FUNCTION_FAILED;
 
     prop = MSI_RecordGetString( rec, 9 );
     control->property = dialog_dup_property( dialog, prop, FALSE );

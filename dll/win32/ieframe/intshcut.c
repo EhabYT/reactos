@@ -84,7 +84,7 @@ static inline InternetShortcut* impl_from_IPropertySetStorage(IPropertySetStorag
 
 static BOOL run_winemenubuilder( const WCHAR *args )
 {
-    static const WCHAR menubuilder[] = {'\\','w','i','n','e','m','e','n','u','b','u','i','l','d','e','r','.','e','x','e',0};
+    static const WCHAR menubuilder[] = L"\\winemenubuilder.exe";
     LONG len;
     LPWSTR buffer;
     STARTUPINFOW si;
@@ -126,7 +126,7 @@ static BOOL run_winemenubuilder( const WCHAR *args )
 
 static BOOL StartLinkProcessor( LPCOLESTR szLink )
 {
-    static const WCHAR szFormat[] = { ' ','-','w',' ','-','u',' ','"','%','s','"',0 };
+    static const WCHAR szFormat[] = L" -w -u \"%s\"";
     LONG len;
     LPWSTR buffer;
     BOOL ret;
@@ -262,7 +262,6 @@ static HRESULT WINAPI UniformResourceLocatorW_InvokeCommand(IUniformResourceLoca
     InternetShortcut *This = impl_from_IUniformResourceLocatorW(url);
     WCHAR app[64];
     HKEY hkey;
-    static const WCHAR wszURLProtocol[] = {'U','R','L',' ','P','r','o','t','o','c','o','l',0};
     SHELLEXECUTEINFOW sei;
     DWORD res, type;
     HRESULT hres;
@@ -286,7 +285,7 @@ static HRESULT WINAPI UniformResourceLocatorW_InvokeCommand(IUniformResourceLoca
     if(res != ERROR_SUCCESS)
         return E_FAIL;
 
-    res = RegQueryValueExW(hkey, wszURLProtocol, NULL, &type, NULL, NULL);
+    res = RegQueryValueExW(hkey, L"URL Protocol", NULL, &type, NULL, NULL);
     RegCloseKey(hkey);
     if(res != ERROR_SUCCESS || type != REG_SZ)
         return E_FAIL;
@@ -456,10 +455,6 @@ static HRESULT get_profile_string(LPCWSTR lpAppName, LPCWSTR lpKeyName,
 
 static HRESULT WINAPI PersistFile_Load(IPersistFile *pFile, LPCOLESTR pszFileName, DWORD dwMode)
 {
-    static const WCHAR str_header[] = {'I','n','t','e','r','n','e','t','S','h','o','r','t','c','u','t',0};
-    static const WCHAR str_URL[] = {'U','R','L',0};
-    static const WCHAR str_iconfile[] = {'i','c','o','n','f','i','l','e',0};
-    static const WCHAR str_iconindex[] = {'i','c','o','n','i','n','d','e','x',0};
     InternetShortcut *This = impl_from_IPersistFile(pFile);
     WCHAR *filename = NULL;
     WCHAR *url;
@@ -477,7 +472,7 @@ static HRESULT WINAPI PersistFile_Load(IPersistFile *pFile, LPCOLESTR pszFileNam
     if (!filename)
         return E_OUTOFMEMORY;
 
-    if (FAILED(hr = get_profile_string(str_header, str_URL, pszFileName, &url)))
+    if (FAILED(hr = get_profile_string(L"InternetShortcut", L"URL", pszFileName, &url)))
     {
         CoTaskMemFree(filename);
         return hr;
@@ -502,7 +497,7 @@ static HRESULT WINAPI PersistFile_Load(IPersistFile *pFile, LPCOLESTR pszFileNam
        If we don't find them, that's not a failure case -- it's possible
        that they just aren't in there. */
 
-    if (get_profile_string(str_header, str_iconfile, pszFileName, &iconfile) == S_OK)
+    if (get_profile_string(L"InternetShortcut", L"iconfile", pszFileName, &iconfile) == S_OK)
     {
         PROPSPEC ps;
         PROPVARIANT pv;
@@ -516,7 +511,7 @@ static HRESULT WINAPI PersistFile_Load(IPersistFile *pFile, LPCOLESTR pszFileNam
     }
     CoTaskMemFree(iconfile);
 
-    if (get_profile_string(str_header, str_iconindex, pszFileName, &iconindexstring) == S_OK)
+    if (get_profile_string(L"InternetShortcut", L"iconindex", pszFileName, &iconindexstring) == S_OK)
     {
         int iconindex;
         PROPSPEC ps;

@@ -89,17 +89,24 @@ static ULONG create_page_control( ULONG pagesize, struct WLDAP32_berval *cookie,
     else
         tag = ber_printf( ber, "{iO}", (ber_int_t)pagesize, &null_cookie );
 
+    if (tag == LBER_ERROR)
+    {
+        ber_free( ber, 1 );
+        return WLDAP32_LDAP_ENCODING_ERROR;
+    }
+
     ret = ber_flatten( ber, &berval );
     ber_free( ber, 1 );
-
-    if (tag == LBER_ERROR)
-        return WLDAP32_LDAP_ENCODING_ERROR;
 
     if (ret == -1)
         return WLDAP32_LDAP_NO_MEMORY;
 
     /* copy the berval so it can be properly freed by the caller */
-    if (!(val = heap_alloc( berval->bv_len ))) return WLDAP32_LDAP_NO_MEMORY;
+    if (!(val = heap_alloc( berval->bv_len )))
+    {
+        ber_bvfree( berval );
+        return WLDAP32_LDAP_NO_MEMORY;
+    }
 
     len = berval->bv_len;
     memcpy( val, berval->bv_val, len );

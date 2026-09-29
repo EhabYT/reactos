@@ -739,7 +739,13 @@ static BOOL verify_format(LPWSTR data)
 
     while (*data)
     {
-        if (*data == '[' && *(data - 1) != '\\')
+        if (*data == '\\' && *(data + 1) == '[')
+        {
+            data += 2;
+            continue;
+        }
+
+        if (*data == '[')
             count++;
         else if (*data == ']')
             count--;
@@ -994,7 +1000,7 @@ UINT WINAPI MsiFormatRecordA(MSIHANDLE hinst, MSIHANDLE hrec, char *buf, DWORD *
 
     r = MSI_FormatRecordW(package, rec, NULL, &len);
     if (r != ERROR_SUCCESS)
-        return r;
+        goto done;
 
     value = malloc(++len * sizeof(WCHAR));
     if (!value)

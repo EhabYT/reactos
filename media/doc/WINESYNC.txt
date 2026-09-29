@@ -31,6 +31,9 @@ dll/directx/wine/d3d8           # Synced to WineStaging-3.3
 dll/directx/wine/d3d9           # Synced to WineStaging-3.3
 dll/directx/wine/d3dcompiler_43 # Synced to WineStaging-4.18
 dll/directx/wine/d3drm          # Synced to WineStaging-4.18
+sdk/include/psdk/dwmapi.h       # Synced to Wine-11.18
+sdk/include/psdk/iads.idl       # Synced to Wine-11.18
+sdk/include/psdk/pdh.h          # Synced to Wine-11.18
 dll/directx/wine/d3dx9_24 => 43 # Synced to WineStaging-6.0-rc5
 dll/directx/wine/d3dxof         # Synced to WineStaging-4.18
 dll/directx/wine/ddraw          # Synced to WineStaging-3.3
@@ -49,82 +52,82 @@ dll/directx/wine/qedit          # Synced to WineStaging-3.17
 dll/directx/wine/quartz         # Synced to WineStaging-3.9
 dll/directx/wine/wined3d        # Synced to WineStaging-3.3
 
-dll/win32/activeds            # Synced to Wine-10.0
+dll/win32/activeds            # Synced to Wine-11.18 (dnwithbinary.c added; needs psdk/iads.idl)
 dll/win32/activeds.tlb        # Synced to Wine-10.0
-dll/win32/actxprxy            # Synced to Wine-10.0
-dll/win32/advpack             # Synced to Wine-10.0
-dll/win32/atl                 # Synced to Wine-10.0
+dll/win32/actxprxy            # Synced to Wine-11.18 (IEnumObjects added to psdk/shobjidl.idl)
+dll/win32/advpack             # Synced to Wine-11.18
+dll/win32/atl                 # Synced to Wine-11.18
 dll/win32/atl80               # Synced to Wine-10.0
 dll/win32/atl100              # Synced to Wine-10.0
-dll/win32/avifil32            # Synced to Wine-10.0
+dll/win32/avifil32            # Synced to Wine-11.18
 dll/win32/avrt                # Synced to Wine-10.0
-dll/win32/bcrypt              # Synced to WineStaging-10.6 (+ winetest synced to d9148e48a3257ae80361f02f0bb7a2d607ef18ec)
-dll/win32/bcryptprimitives    # Synced to Wine-10.0
-dll/win32/bluetoothapis       # Synced to Wine-10.0
-dll/win32/cabinet             # Synced to Wine-10.0
+dll/win32/bcrypt              # Synced to WineStaging-10.6 (+ winetest synced to d9148e48a3257ae80361f02f0bb7a2d607ef18ec); took the AES MessageBlockLength property from 11.18, the rest of that release needs SymCrypt - see below
+dll/win32/bcryptprimitives    # Synced to Wine-11.18
+dll/win32/bluetoothapis       # Synced to Wine-10.0 (11.18 delta needs four new headers - see below)
+dll/win32/cabinet             # Synced to Wine-10.0 (11.18 adds compressapi.c and the Compression API - see below)
 dll/win32/clusapi             # Synced to Wine-10.0
 dll/win32/combase             # Synced to Wine-10.0
 dll/win32/comcat              # Synced to Wine-10.0
 dll/win32/comdlg32            # Synced to Wine-10.0
-dll/win32/coml2               # Synced to Wine-10.0
+dll/win32/coml2               # Synced to Wine-11.18
 dll/win32/compstui            # Synced to Wine-10.0
 dll/win32/credui              # Synced to Wine-10.0
 dll/win32/crypt32             # Synced to Wine-10.0
 dll/win32/cryptdlg            # Synced to Wine-10.0
 dll/win32/cryptdll            # Synced to Wine-10.0
-dll/win32/cryptnet            # Synced to Wine-10.0
-dll/win32/cryptui             # Synced to Wine-10.0
-dll/win32/dbgeng              # Synced to Wine-10.0
+dll/win32/cryptnet            # Synced to Wine-11.18
+dll/win32/cryptui             # Synced to Wine-11.18
+dll/win32/dbgeng              # Synced to Wine-11.18
 dll/win32/dbghelp             # Synced to WineStaging-5.16
 dll/win32/dciman32            # Synced to Wine-10.0
-dll/win32/dwmapi              # Synced to Wine-8.14
+dll/win32/dwmapi              # Synced to Wine-11.18 (DWMWINDOWATTRIBUTE is a reduced enum here)
 dll/win32/faultrep            # Synced to Wine-10.0
 dll/win32/feclient            # Synced to Wine-10.0
 dll/win32/fontsub             # Synced to Wine-10.0
-dll/win32/fusion              # Synced to Wine-10.0
+dll/win32/fusion              # Synced to Wine-11.18 (WIN32_NO_STATUS in assembly.c kept - see below)
 dll/win32/gdiplus             # Synced to Wine-10.0
-dll/win32/hhctrl.ocx          # Synced to Wine-10.0
+dll/win32/hhctrl.ocx          # Synced to Wine-11.18 (resource strings live in lang/*.rc here - see below)
 dll/win32/hlink               # Synced to Wine-10.0
-dll/win32/hnetcfg             # Synced to Wine-10.0
-dll/win32/iccvid              # Synced to Wine-10.0
-dll/win32/ieframe             # Synced to WineStaging-4.18
+dll/win32/hnetcfg             # Synced to Wine-11.18
+dll/win32/iccvid              # Synced to Wine-11.18
+dll/win32/ieframe             # Synced to WineStaging-4.18 (seven files synced to 11.18; ieframe.rc and the wcsnicmp spelling kept, see below)
 dll/win32/imaadp32.acm        # Synced to Wine-10.0
-dll/win32/imagehlp            # Synced to Wine-10.0
+dll/win32/imagehlp            # Synced to Wine-11.18 (spec signature churn is cosmetic, see below)
 dll/win32/inetcomm            # Synced to Wine-10.0
-dll/win32/inetmib1            # Synced to WineStaging-4.18
+dll/win32/inetmib1            # Synced to Wine-11.18
 dll/win32/initpki             # Synced to Wine-10.0
 dll/win32/inseng              # Synced to WineStaging-4.18
 dll/win32/iphlpapi            # Out of sync
 dll/win32/itircl              # Synced to Wine-10.0
-dll/win32/itss                # Synced to Wine-10.0
+dll/win32/itss                # Synced to Wine-11.18
 dll/win32/jscript             # Synced to Wine-10.0
 dll/win32/jsproxy             # Synced to Wine-10.0
 dll/win32/l3codeca.acm        # Synced to Wine-10.0
 dll/win32/loadperf            # Synced to Wine-10.0
 dll/win32/lz32                # Synced to Wine-10.0
 dll/win32/mapi32              # Synced to Wine-10.0
-dll/win32/mciavi32            # Synced to Wine-11.11
-dll/win32/mcicda              # Synced to Wine-10.0
+dll/win32/mciavi32            # Synced to Wine-11.18
+dll/win32/mcicda              # Synced to Wine-11.18 (upstream's WIN32_NO_STATUS removal not applied - see below)
 dll/win32/mciqtz32            # Synced to Wine-10.0
 dll/win32/mciseq              # Synced to Wine-10.0
 dll/win32/mciwave             # Synced to Wine-10.0
 dll/win32/mgmtapi             # Synced to Wine-10.0
-dll/win32/mlang               # Synced to Wine-10.0
+dll/win32/mlang               # Synced to Wine-11.18
 dll/win32/mmdevapi            # Synced to WineStaging-4.18
-dll/win32/mpr                 # Synced to WineStaging-4.18
+dll/win32/mpr                 # Synced to Wine-11.18 (mpr.rc, mpr.spec are ours)
 dll/win32/mprapi              # Synced to Wine-10.0
 dll/win32/msacm32             # Synced to WineStaging-4.18
 dll/win32/msacm32.drv         # Synced to Wine-10.0
 dll/win32/msadp32.acm         # Synced to Wine-10.0
 dll/win32/mscat32             # Synced to Wine-10.0
-dll/win32/mscms               # Synced to WineStaging-4.18
-dll/win32/mscoree             # Synced to Wine-10.0
-dll/win32/msftedit            # Synced to Wine-10.0
+dll/win32/mscms               # Synced to Wine-11.18 (three Wcs stubs and rsrc.rc not taken - see below)
+dll/win32/mscoree             # Synced to Wine-11.18 (get_mono_path_unix is ReactOS-guarded)
+dll/win32/msftedit            # Synced to Wine-11.18
 dll/win32/msg711.acm          # Synced to Wine-10.0
 dll/win32/msgsm32.acm         # Synced to WineStaging-4.0
 dll/win32/mshtml              # Synced to WineStaging-1.7.55
 dll/win32/mshtml.tlb          # Synced to WineStaging-1.7.55
-dll/win32/msi                 # Synced to Wine-10.0
+dll/win32/msi                 # Synced to Wine-11.18
 dll/win32/msimg32             # Synced to Wine-10.0
 dll/win32/msimtf              # Synced to Wine-10.0
 dll/win32/msisip              # Synced to Wine-10.0
@@ -132,111 +135,111 @@ dll/win32/msisys.ocx          # Synced to Wine-10.0
 dll/win32/msnet32             # Synced to Wine-10.0
 dll/win32/mspatcha            # Forked at WineStaging-3.3
 dll/win32/msrle32             # Synced to Wine-10.0
-dll/win32/mssign32            # Synced to Wine-10.0
+dll/win32/mssign32            # Synced to Wine-11.18
 dll/win32/mssip32             # Synced to Wine-10.0
 dll/win32/mstask              # Synced to WineStaging-3.3
 dll/win32/msvcrt              # Synced to Wine-10.0
 dll/win32/msvcrt20            # Out of sync
 dll/win32/msvcrt40            # Out of sync
-dll/win32/msvfw32             # Synced to Wine-10.0
+dll/win32/msvfw32             # Synced to Wine-11.18
 dll/win32/msvidc32            # Synced to Wine-10.0
 dll/win32/msxml               # Synced to Wine-10.0
 dll/win32/msxml2              # Synced to Wine-10.0
 dll/win32/msxml3              # Synced to Wine-10.0
-dll/win32/msxml4              # Synced to Wine-10.0
-dll/win32/msxml6              # Synced to Wine-10.0
+dll/win32/msxml4              # Synced to Wine-11.18 (kept version resource, see below)
+dll/win32/msxml6              # Synced to Wine-11.18 (kept version resource, see below)
 dll/win32/nddeapi             # Synced to Wine-10.0
-dll/win32/netapi32            # Forked at Wine-1.3.34
-dll/win32/netutils            # Synced to Wine-10.0
+dll/win32/netapi32            # Forked at Wine-1.3.34 (11.18 delta needs unixlib - see below)
+dll/win32/netutils            # Synced to Wine-11.18 (upstream's WIN32_NO_STATUS removal not applied - see below)
 dll/win32/npptools            # Synced to Wine-10.0
-dll/win32/ntdsapi             # Synced to Wine-10.0
+dll/win32/ntdsapi             # Synced to Wine-11.18
 dll/win32/objsel              # Synced to Wine-10.0
 dll/win32/odbc32              # Synced to WineStaging-4.18. Depends on port of Linux ODBC.
-dll/win32/odbccp32            # Synced to Wine-10.0
+dll/win32/odbccp32            # Synced to Wine-11.18
 dll/win32/ole32               # Synced to Wine-10.0
-dll/win32/oleacc              # Synced to Wine-10.0
+dll/win32/oleacc              # Synced to Wine-11.18
 dll/win32/oleaut32            # Synced to Wine-10.0
 dll/win32/olecli32            # Synced to Wine-10.0
 dll/win32/oledlg              # Synced to Wine-10.0
 dll/win32/olepro32            # Synced to Wine-10.0
 dll/win32/olesvr32            # Synced to Wine-10.0
 dll/win32/olethk32            # Synced to Wine-10.0
-dll/win32/pdh                 # Synced to Wine-10.0
+dll/win32/pdh                 # Synced to Wine-11.18 (psdk/pdh.h gained the *_ITEM types)
 dll/win32/pidgen              # Synced to Wine-10.0
-dll/win32/powrprof            # Forked at Wine-1.0rc5
+dll/win32/powrprof            # Forked at Wine-1.0rc5 (upstream's two new exports not taken - see below)
 dll/win32/printui             # Synced to Wine-10.0
-dll/win32/propsys             # Synced to Wine-10.0
+dll/win32/propsys             # Synced to Wine-11.18
 dll/win32/pstorec             # Synced to Wine-10.0
-dll/win32/qmgr                # Synced to Wine-10.0
+dll/win32/qmgr                # Synced to Wine-11.18 (upstream delta was tests/ only)
 dll/win32/qmgrprxy            # Synced to Wine-10.0
 dll/win32/query               # Synced to Wine-10.0
 dll/win32/rasapi32            # Synced to Wine-10.0
 dll/win32/regapi              # Synced to Wine-10.0
 dll/win32/resutils            # Synced to Wine-10.0
-dll/win32/riched20            # Synced to Wine-10.0
-dll/win32/riched32            # Synced to Wine-10.0
+dll/win32/riched20            # Synced to Wine-11.18
+dll/win32/riched32            # Synced to Wine-11.18
 dll/win32/rpcrt4              # Synced to Wine-10.0
 dll/win32/rsabase             # Synced to Wine-10.0
 dll/win32/rsaenh              # Synced to WineStaging-2.9
-dll/win32/rtworkq             # Synced to Wine-10.0
+dll/win32/rtworkq             # Synced to Wine-11.18
 dll/win32/sccbase             # Synced to Wine-10.0
-dll/win32/schannel            # Synced to WineStaging-3.3
-dll/win32/scrrun              # Synced to Wine-10.0
+dll/win32/schannel            # Synced to Wine-11.18 (upstream delta was the WIN32_NO_STATUS removal only)
+dll/win32/scrrun              # Synced to Wine-11.18 (kept the WINELIB undef block and the version resource)
 dll/win32/secur32             # Forked
 dll/win32/security            # Forked (different .spec)
 dll/win32/sensapi             # Synced to Wine-10.0
 dll/win32/setupapi            # Forked at Wine-20050524
 dll/win32/shdoclc             # Synced to Wine-10.0
-dll/win32/shdocvw             # Synced to WineStaging-4.18
+dll/win32/shdocvw             # Synced to WineStaging-4.18 (upstream deletes two exports we still provide - see below)
 dll/win32/shell32             # Forked at Wine-20071011
 dll/win32/shfolder            # Synced to Wine-10.0
 dll/win32/shlwapi             # Synced to WineStaging-3.3
 dll/win32/slbcsp              # Synced to Wine-10.0
 dll/win32/snmpapi             # Synced to Wine-10.0
 dll/win32/softpub             # Synced to Wine-10.0
-dll/win32/sspicli             # Synced to Wine-10.0
+dll/win32/sspicli             # Synced to Wine-11.18
 dll/win32/stdole2.tlb         # Synced to WineStaging-3.3
 dll/win32/stdole32.tlb        # Synced to WineStaging-3.3
 dll/win32/sti                 # Synced to Wine-10.0
-dll/win32/sxs                 # Synced to Wine-10.0
+dll/win32/sxs                 # Synced to Wine-11.18
 dll/win32/t2embed             # Synced to Wine-10.0
-dll/win32/tapi32              # Synced to Wine-10.0
+dll/win32/tapi32              # Synced to Wine-11.18 (sources; upstream's new tapi.rc/tapi.rgs registry resource not adopted)
 dll/win32/traffic             # Synced to Wine-10.0
 dll/win32/twain_32            # Synced to Wine-10.0
-dll/win32/uiautomationcore    # Synced to Wine-10.0
+dll/win32/uiautomationcore    # Synced to Wine-11.18
 dll/win32/updspapi            # Synced to Wine-10.0
 dll/win32/url                 # Synced to Wine-10.0
 dll/win32/urlmon              # Synced to Wine-10.0
-dll/win32/usp10               # Synced to WineStaging-4.18
-dll/win32/uxtheme             # Forked
+dll/win32/usp10               # Synced to Wine-11.18 (upstream delta was tests/ only)
+dll/win32/uxtheme             # Forked (spec ordinals and ShouldAppsUseDarkMode - see below)
 dll/win32/vbscript            # Synced to Wine-10.0
 dll/win32/version             # Synced to WineStaging-4.18 (Requires kernelbase)
 dll/win32/vssapi              # Synced to WineStaging-4.18
-dll/win32/wbemdisp            # Synced to WineStaging-4.18
+dll/win32/wbemdisp            # Synced to WineStaging-4.18 (locator.c stays a reduction, main.c fix taken - see below)
 dll/win32/wbemprox            # Synced to WineStaging-4.18
 dll/win32/windowscodecs       # Synced to Wine-10.0
 dll/win32/windowscodecsext    # Synced to Wine-10.0
 dll/win32/wing32              # Synced to Wine-10.0
-dll/win32/winhttp             # Synced to Wine-10.0
+dll/win32/winhttp             # Synced to Wine-11.18 (socket.c taken, rsrc.rc kept - see below)
 dll/win32/wininet             # Synced to WineStaging-6.0rc1
-dll/win32/winmm               # Forked at Wine-20050628
+dll/win32/winmm               # Forked at Wine-20050628 (mci.c synced to Wine-11.18)
 dll/win32/winmm/midimap       # Forked at Wine-20050628
 dll/win32/winmm/wavemap       # Forked at Wine-20050628
 dll/win32/winscard            # Synced to WineStaging-4.18 (Newer versions require pcsclite)
-dll/win32/wintrust            # Synced to Wine-10.0
+dll/win32/wintrust            # Synced to Wine-11.18
 dll/win32/winusb              # Synced to Wine-10.0
-dll/win32/wldap32             # Synced to WineStaging-4.18
+dll/win32/wldap32             # Synced to WineStaging-4.18 (took the 11.18 fixes; the DC discovery feature is not ported - see below)
 dll/win32/wmi                 # Synced to Wine-10.0
 dll/win32/wmiutils            # Synced to Wine-10.0
-dll/win32/wmvcore             # Synced to WineStaging-4.18
-dll/win32/wshom.ocx           # Synced to Wine-10.0
+dll/win32/wmvcore             # Synced to WineStaging-4.18 (our async_reader.c is a stubbed fork - see below)
+dll/win32/wshom.ocx           # Synced to Wine-11.18
 dll/win32/wtsapi32            # Synced to WineStaging-4.18
 dll/win32/wuapi               # Synced to Wine-10.0
 dll/win32/xinput1_1           # Synced to WineStaging-2.9
 dll/win32/xinput1_2           # Synced to WineStaging-2.9
-dll/win32/xinput1_3           # Synced to WineStaging-2.9
-dll/win32/xinput9_1_0         # Synced to WineStaging-2.9
-dll/win32/xmllite             # Synced to Wine-10.0
+dll/win32/xinput1_3           # Synced to WineStaging-2.9 (our implementation is not Wine's - see below)
+dll/win32/xinput9_1_0         # Synced to WineStaging-2.9 (our implementation is not Wine's - see below)
+dll/win32/xmllite             # Synced to Wine-11.18
 dll/win32/xolehlp             # Synced to Wine-10.0
 
 comctl32 -
@@ -252,7 +255,7 @@ win32ss/printing/monitors/localmon/ui/  # Synced to WineStaging-4.18 (known ther
 ReactOS shares the following programs with Winehq.
 
 base/applications/cmdutils/cscript  # Synced to WineStaging-4.18
-base/applications/cmdutils/reg      # Synced to WineStaging-6.23
+base/applications/cmdutils/reg      # Synced to Wine-11.18
 base/applications/cmdutils/schtasks # Synced to WineStaging-3.3
 base/applications/cmdutils/taskkill # Synced to WineStaging-3.17
 base/applications/cmdutils/wmic     # Synced to WineStaging-4.0
@@ -260,14 +263,14 @@ base/applications/cmdutils/wscript  # Synced to Wine-11.10
 base/applications/cmdutils/xcopy    # Synced to WineStaging-3.17
 base/applications/games/winmine     # Synced to WineStaging-2.16 with our own resources.
 base/applications/extrac32          # Synced to WineStaging-4.0
-base/applications/iexplore          # Synced to WineStaging-3.3
+base/applications/iexplore          # Synced to Wine-11.18 (kept version resource, see below)
 base/applications/notepad           # Forked at Wine-20041201
-base/applications/winhlp32          # Synced to WineStaging-4.0
-base/applications/wordpad           # Synced to WineStaging-1.9.16
+base/applications/winhlp32          # Synced to Wine-11.18
+base/applications/wordpad           # Synced to Wine-11.18 (window placement is ours)
 base/applications/write             # Synced to WineStaging-3.3
 base/services/rpcss                 # Synced to Wine-10.0
 base/system/expand                  # Synced to WineStaging-3.3
-base/system/msiexec                 # Synced to Wine-10.0
+base/system/msiexec                 # Synced to Wine-11.18, with the version resource deliberately kept in rsrc.rc
 
 In addition the following libs, dlls and source files are mostly based on code ported
 from Winehq CVS. If you are looking to update something in these files
@@ -391,3 +394,489 @@ win32k -
 
 winmm -
   modules/rostests/winetests/winmm      # Synced to WineStaging-4.18
+
+Notes for syncers
+-----------------
+
+WIN32_NO_STATUS is not removable
+    Wine removed "#define WIN32_NO_STATUS" from a number of modules between
+    Wine-10.0 and Wine-11.18 (e.g. dlls/mcicda/mcicda.c,
+    dlls/netutils/main.c). Do NOT carry that removal across.
+
+    In ReactOS both sdk/include/psdk/ntstatus.h and sdk/include/xdk/winnt_old.h
+    wrap their STATUS_* definitions in "#ifndef WIN32_NO_STATUS". The pattern
+    used throughout our wine modules is therefore:
+
+        #include "ntstatus.h"
+        #define WIN32_NO_STATUS
+        #include "windef.h"
+
+    i.e. let ntstatus.h define the codes, then stop winnt.h from defining them
+    a second time. Dropping the define makes both headers try to define the
+    same macros. Wine can drop it because it builds against its own headers.
+
+    When a component's ONLY upstream delta is that removal, there is nothing
+    to take and the entry can simply be marked as synced.
+
+WINE_NO_UNICODE_MACROS undef blocks are not removable
+    Same class as WIN32_NO_STATUS. Several of our .idl files open with
+
+        cpp_quote("#ifdef WINE_NO_UNICODE_MACROS")
+        cpp_quote("#undef CopyFile")
+        cpp_quote("#undef DeleteFile")
+        cpp_quote("#undef MoveFile")
+        cpp_quote("#endif")
+
+    Wine removed that block from dlls/scrrun/scrrun.idl and others. Do not
+    carry the removal here.
+
+    Our sdk/include/psdk/winbase.h defines CopyFile, DeleteFile and MoveFile
+    as A/W macros under #ifdef UNICODE AND under an #else for the ANSI case,
+    so the identifiers are macros in both configurations. scrrun.idl declares
+    methods actually named CopyFile, MoveFile and DeleteFile, so without the
+    undef the generated proxy and stub code has those method names rewritten
+    by the preprocessor. Wine can drop the block because its build defines
+    WINE_NO_UNICODE_MACROS; ours only does so in
+    modules/rostests/apitests/com.
+
+Wine's tests/ directories are not synced here
+    Upstream test suites live in modules/rostests/winetests in our tree, not
+    next to the DLL. A component whose only upstream delta touches tests/ has
+    no source change to take.
+
+Deliberate reductions are not upstream bugs
+    Some modules intentionally carry less than upstream, e.g.
+    base/applications/cmdutils/reg has no REG_QWORD support. Upstream changes
+    that live inside such a removed block cannot be applied and should not be
+    silently re-added; keep the reduction and note it.
+
+    A large enough reduction makes the whole file unmergeable, which is why
+    dll/win32/wbemdisp/locator.c is deferred. Our copy is Wine's file about a
+    thousand lines shorter: the ISWbemMethod, ISWbemMethodSet and
+    ISWbemNamedValue/ISWbemNamedValueSet families are not there, and neither
+    are the struct object internals they use. Wine 11 rewrites
+    EnumVARIANT_create to serve all three enumerations from one function
+    taking a new enum enum_variant_type - our copy still has the older
+    IEnumWbemClassObject-only version - and adds ISWbemQualifierSet and
+    ISWbemObjectPath implementations that build on the removed object model.
+    A three-way merge gives 22 conflicts. Two of the rewrite's three callers
+    are in the code we dropped, so a partial take is not worth attempting.
+
+    The part that does not depend on any of that was taken on its own:
+    main.c's factory_QueryInterface now clears *obj before returning
+    E_NOINTERFACE. Check a reduced file for one or two separable hunks before
+    deferring the whole component.
+
+    A spec can carry the same kind of reduction. dll/win32/mscms exports
+    WcsGetDefaultColorProfile, WcsGetDefaultColorProfileSize and
+    WcsGetDefaultRenderingIntent as "@ stub" where Wine has had them as
+    "@ stdcall" with implementations since well before 10.0. They are not
+    part of the 11.18 delta, so they were left alone: taking them would mean
+    importing three functions that no upstream change asks for. They are
+    stubs in Wine too - each one only prints a FIXME and sets
+    ERROR_CALL_NOT_IMPLEMENTED - so the difference is a slightly better
+    message rather than behaviour. The file stays self-consistent, which is
+    what matters: every "@ stdcall" line has a definition and no "@ stub"
+    line has one. Re-check that invariant after editing any spec.
+
+Picking hunks out of a forked file
+    A file can be too far from Wine for a merge to be meaningful and still
+    contain individual fixes worth having. wldap32 in 11.18 is the case: our
+    copies are between 33% and 87% Wine lineage, and the full delta reports
+    work in seven files, but three of the changes are self-contained and
+    land in code we do have.
+
+    misc.c's strnAtoW() wrote its terminator with *++d = 0 instead of
+    *d = 0, one byte past the end of everything it had just written. page.c
+    called ber_flatten() before checking whether ber_printf() had failed,
+    and leaked the berval when the copy of it could not be allocated. option.c
+    had LDAP_OPT_GETDSNAME_FLAGS and LDAP_OPT_PROMPT_CREDENTIALS in its
+    "unsupported option" lists; Wine 11 implements both, so they were moved
+    out of the lists and given the same stub bodies upstream uses. In all four
+    cases our code was the same shape as upstream's, which is what made them
+    separable - the check is whether the lines upstream changed exist in our
+    file at all, not whether the file as a whole is close.
+
+    Two of page.c's other fixes were skipped because our page.c has no
+    search->cookie field for them to apply to, and bind.c's fixes were
+    skipped for the same reason: our bind.c is a different implementation
+    without the SASL default-credentials function they change. ld_host in
+    winldap_private.h is PCHAR here and unused, so changing it to WCHAR would
+    have no effect on its own.
+
+    What is not ported is init.c's DC discovery. Wine 11 makes ldap_connect()
+    call DsGetDcNameW() on the stored host and, on success, point the
+    connection at the returned domain controller, which is why ld_host became
+    a WCHAR * that is allocated in ldap_initW and freed in the two destroy
+    paths. That is a feature with its own behaviour, not a fix: it changes
+    which server a connection ends up talking to. ReactOS has dsgetdc.h,
+    lmcons.h, lmapibuf.h and NetApiBufferFree, so it could be ported, but it
+    should be done deliberately against our own host handling rather than
+    merged out of a diff.
+
+A new file can be the point of the change
+    Wine 11.18's winhttp delta reads like a deletion: request.c loses 1640
+    lines and gains 751. The lines did not go away, they moved into a new
+    socket.c, and that file is not optional - it is where the six exported
+    WinHttpWebSocket* functions now live. Taking only the existing files
+    would have left winhttp.spec exporting six functions with no definitions
+    anywhere.
+
+    The clue is to follow the exports, not the line counts. Before deciding a
+    new upstream file is groundwork, check whether anything the tree already
+    exports has moved into it.
+
+    Two smaller instances of the same shape are recorded above: Wine sometimes
+    adds a file that nothing calls (mscms's rsrc.rc) and sometimes moves code
+    a spec depends on (here). The difference is whether the module's own
+    public surface reaches it.
+
+A shared psdk header can block a component sync
+    Some Wine modules call proxy helpers that widl generates from a shared
+    interface description in sdk/include/psdk. If the interface is not defined
+    there, the generated helper does not exist and the upstream code cannot
+    compile, however self-contained it looks.
+
+    dll/win32/actxprxy was the first instance. Wine-11.18 adds
+    IEnumObjects_Next_Proxy and IEnumObjects_Next_Stub to usrmarshal.c, but
+    sdk/include/psdk/shobjidl.idl only forward-declared IEnumObjects inside a
+    coclass - there was no "interface IEnumObjects : IUnknown" block, so
+    IEnumObjects_RemoteNext_Proxy would never be generated and the type was
+    incomplete. The hunk on its own would not build. Both were taken together:
+    the interface block was added to our psdk idl verbatim from Wine-11.18,
+    and usrmarshal.c followed. widl emits the *_Proxy and *_Stub prototypes
+    for a [call_as] method into the interface header it generates, so defining
+    the interface is all that is needed - there is no separate list of
+    interfaces to register, and actxprxy.spec exports no _Proxy or _Stub
+    names.
+
+    Take the header change first, or leave the component where it is. The same
+    trap applies to any hand-written *_Proxy/_Stub in a *marshal.c file:
+    check that the interface is defined in the psdk header the module includes.
+
+    A second form of the same trap: upstream adds the implementation and the
+    type it needs in the same release. dll/win32/pdh gained real
+    PdhGetFormattedCounterArrayA/W and PdhGetRawCounterArrayA/W and a
+    PdhEnumObjectsA/W export, and Wine 11 added PDH_FMT_COUNTERVALUE_ITEM_A/W
+    and PDH_RAW_COUNTER_ITEM_A/W to include/pdh.h to go with them. Our
+    psdk/pdh.h did not have those types, so the sources alone would not
+    compile. The header was updated in the same commit here.
+
+    Note that our pdh.h has dropped Wine's DECL_PDH_TYPE_AW macro, so add the
+    plain _A/_W structs and keep WINELIB_NAME_AW for the generic names.
+
+    winhttp is the third instance, and the value needed came from the public
+    header rather than a private one: socket.c compares against
+    WINHTTP_HANDLE_TYPE_WEBSOCKET, which Wine added to include/winhttp.h
+    after 10.0. Our psdk/winhttp.h stopped at REQUEST. The single value was
+    added; PROXY_RESOLVER and PROTOCOL, which upstream defines alongside it,
+    are not used by any code here and stay out.
+
+    bluetoothapis is the largest instance so far, and it is deferred rather
+    than attempted. Wine 11 turns the BluetoothFindFirstDevice,
+    BluetoothFindNextDevice, BluetoothFindDeviceClose, BluetoothGetDeviceInfo,
+    BluetoothGetRadioInfo, BluetoothIsConnectable, BluetoothEnableDiscovery,
+    BluetoothEnableIncomingConnections, BluetoothAuthenticateDeviceEx,
+    BluetoothRegisterForAuthenticationEx and BluetoothSendAuthenticationResponseEx
+    stubs into real implementations, adds gatt.c with the BluetoothGATT
+    entry points, and adds a resource for the pairing wizard's strings. Four
+    headers it needs do not exist here at all: bthledef.h, bthioctl.h,
+    bluetoothleapis.h and wine/winebth.h. bluetoothapis.h itself is missing
+    BLUETOOTH_PIN_INFO, BLUETOOTH_OOB_DATA_INFO,
+    BLUETOOTH_NUMERIC_COMPARISON_INFO, BLUETOOTH_PASSKEY_INFO,
+    BLUETOOTH_AUTHENTICATE_RESPONSE, BTH_MAX_PIN_SIZE and two prototypes,
+    and the authentication path also wants CM_Register_Notification and
+    friends from cfgmgr32.h. Wine's cfgmgr32.h delta for those is 392 lines
+    and cannot be pasted in: our cfgmgr32.h is 3224 lines of ReactOS's own
+    and already defines CM_GETIDLIST_FILTER_NONE, LOG_CONF,
+    CM_OPEN_CLASS_KEY_INSTALLER and CR_SUCCESS, so the additions would have
+    to be applied selectively by hand, without a compiler to check them.
+    The new code also talks to Wine's bluetooth driver through the IOCTLs in
+    winebth.h, which ReactOS's own bluetooth stack does not implement.
+
+    There is no separable part to take: every removed line in main.c is a
+    stub the new code replaces. Check that before deferring, as the wbemdisp
+    entry above describes.
+
+The ledger can understate what is already synced
+    A component whose entry says Wine-10.0 may already carry an upstream
+    change, because ReactOS fixed the same bug independently. dll/win32/mciavi32
+    is the example: its entry said Wine-11.11 and its mmoutput.c already
+    matched Wine-11.18 except for two __REACTOS__ blocks, so the frame
+    clamping and the TRACE that upstream added were already present. A
+    three-way merge against the 10.0 baseline then reports conflicts on lines
+    that are in fact identical on both sides.
+
+    When a merge conflicts, check the file against wine-11.18 before resolving
+    anything. If the only differences are __REACTOS__ blocks, the component is
+    already synced and there is nothing to take.
+
+Check that a file is actually Wine's before merging into it
+    A ledger entry names a path, but the code under that path is not
+    necessarily Wine's. Some components took only Wine's .rc and .spec and
+    keep a ReactOS implementation of the code; some programs were forked long
+    ago. A three-way merge against a Wine baseline happily "applies" hunks
+    from a different program and produces nonsense.
+
+    Measured against Wine-11.18, these are NOT mergeable:
+
+        dll/win32/version/version.c     ~20% shared with Wine's version.c
+        base/applications/notepad       ~29% shared; forked at Wine-20041201
+        dll/win32/mpr/mpr.rc            ~24% shared; our file is the
+                                        language-include layout
+
+    whereas dll/win32/mpr/wnet.c (89%), base/applications/wordpad (92%) and
+    the odbccp32/cryptnet/cryptui sources (99-100%) are Wine's code and merge
+    normally. Diff the file against the Wine baseline and look at how much is
+    unchanged before trusting a merge.
+
+A new resource file is not automatically worth taking
+    Wine 11 added dlls/mscms/rsrc.rc, which is one line of resource script
+    bundling an srgb2014.icc data blob as resource 1. Nothing in Wine's own C
+    code reads it - the whole tree references that file only from the .rc
+    itself - so it looks like groundwork for a later release. It was not
+    taken. Our resource compiler has no WINE_DATA_FILE macro, which is what
+    the line uses, and we do not carry the .icc, so the file would not even
+    build until an rc header and the blob were added too, for no consumer.
+
+    When a new upstream file is a resource, check whether any source file
+    references what it defines before adding it.
+
+Wine moved version resources into its Makefiles
+    From Wine 11 onwards, version information often no longer lives in the
+    module's .rc file. It moved to the Makefile as
+
+        VER_PRODUCTVERSION = 5,1,2600,2180
+
+    which Wine's own makedep turns into a generated resource, and the .rc file
+    was deleted upstream. ReactOS's CMake build has no equivalent mechanism,
+    and our .rc files are named explicitly in CMakeLists.txt, so the deletion
+    is not something to follow: keep the local .rc.
+
+    A component whose only upstream delta is such a deletion has nothing to
+    take and can be marked as synced. As of Wine-11.18 that applies to
+    comcat, lz32, mciqtz32, mspatcha, objsel, olepro32, olethk32, rsabase,
+    shfolder, stdole2.tlb, stdole32.tlb, version and others. Check whether the
+    deleted .rc still exists locally and is referenced by CMakeLists.txt
+    before concluding anything.
+
+    The same reasoning covers a deleted .rc we have no counterpart for at all:
+    nothing to do.
+
+A new resource string lands in every language file
+    Wine keeps one English STRINGTABLE inside the module's .rc. ReactOS moved
+    hhctrl.ocx's strings out into lang/*.rc, one per language, selected by
+    #ifdef LANGUAGE_xx in hhctrl.rc. So when Wine 11.18 added
+
+        IDS_SELECT_TOPIC "Select Topic"
+
+    there was no upstream .rc hunk to take: the merge conflicts against our
+    include list and the answer is simply to drop the upstream block, because
+    the strings it carries are all in the language files already.
+
+    The string still has to reach the other twenty-five files or the feature
+    degrades quietly rather than failing to build. help.c calls
+    HH_LoadString(IDS_SELECT_TOPIC) for the index popup's caption, and
+    HH_LoadString returns an empty string when LoadStringW finds nothing - no
+    crash, no warning, just an untitled window in every language that lacks
+    the id. The id was added to all twenty-six, English text where there is no
+    translation yet, which is how IDS_DEFTITLE was handled before (De.rc and
+    Ru.rc carry "HTML Help" untranslated while Fr.rc has "Aide HTML").
+
+    The same shape will apply to any component whose resources we
+    externalized. Check for a lang/ subdirectory next to the .rc before
+    assuming an upstream resource hunk can be applied as-is.
+
+A spec is only mergeable if the ordinals still line up
+    uxtheme is the clearest case. Wine 11 adds four Immersive colour
+    functions to system.c and the matching spec entries, but our
+    uxtheme.spec is not Wine's: it is 29% Wine lineage and reordered, so
+    our ordinal 49 is GetThemeAppProperties while Wine's 49 is "stub @".
+    Taking upstream's spec hunk would collide with an existing export.
+
+    powrprof is the milder version of the same problem. There are no explicit
+    ordinals in either spec - they come from the order of the lines - and our
+    spec is sorted alphabetically while Wine's is in historical order.
+    Wine 11 adds PowerRegisterForEffectivePowerModeNotifications, which we do
+    not have, and PowerReadACValueIndex, which we have had for years:
+    our powrprof.c is ReactOS's own (12% Wine lineage) and already exports
+    PowerReadACValue, PowerReadACValueIndex, PowerReadDCValueIndex and
+    PowerWriteDCValueIndex. Inserting Wine's two lines mid-file would
+    renumber every export after them, so the only export worth taking is one
+    that needs a new function written, not an upstream hunk merged.
+
+    The component also keeps two spec files, uxtheme.spec and
+    uxtheme_vista.spec, chosen by DLL_EXPORT_VERSION in CMakeLists.txt, and
+    the vista one is where the newer ordinals live (uxtheme_vista.spec:102
+    is already "102 stub GetThemeStream"). Adding an export correctly means
+    deciding which file it belongs in and which ordinal is free, not
+    applying a diff.
+
+    On top of that, GetImmersiveColorFromColorSetEx calls
+    ShouldAppsUseDarkMode, which Wine has had since well before 10.0 but
+    our uxtheme does not implement at all, so the Immersive block cannot
+    come across on its own.
+
+    The draw.c part is separable and small - a null-options fix in
+    DrawThemeTextEx, the parentless-window early return, and two new
+    stubs - and is worth doing as its own change with the ordinal work.
+
+Our spelling can differ from upstream's on purpose
+    ieframe's iexplore.c is a case where the merge is taken but three lines
+    keep our spelling: upstream inlines L"-embedding", L"-nohome" and
+    L"-startmanager" and compares them with wcsnicmp(), and this tree uses
+    _wcsnicmp() for the same thing. Both exist here - wcsnicmp is declared in
+    sdk/include/crt/string.h under _CRT_NONSTDC_DEPRECATE - but _wcsnicmp is
+    what the rest of the function and most of the tree uses. Taking the
+    structure and keeping the local name is right; verify() will report those
+    three lines as MISSING and that is expected, the same as winhlp32's %u
+    for LONG.
+
+A backport guard is a note to your future self
+    Our copy of riched20/writer.c had this:
+
+        #ifdef __REACTOS__ /* Import fix from Wine-11.3 */
+            if ((ULONG)fmt->rgxTabs[i] >> 28 <= 5)
+              strcat(props, leader[(ULONG)fmt->rgxTabs[i] >> 28]);
+        #else
+            if (fmt->rgxTabs[i] >> 28 <= 5)
+              strcat(props, leader[fmt->rgxTabs[i] >> 28]);
+        #endif
+
+    Wine 11.18 made the cast unconditional, so the sync's merge reported a
+    conflict where the two sides were really the same fix - ours from a
+    backport, upstream's native. The guard and its comment are a to-do that
+    says "drop me when we reach Wine-11.3"; 11.18 is past that, so the guard
+    came off and the bare upstream lines stayed.
+
+    Worth grepping for when syncing: an #ifdef __REACTOS__ whose comment
+    names a Wine version is not a permanent deviation, and verify() will
+    report the removed guard as a changed marker count. Not every guard is
+    like this - WIN32_NO_STATUS and the unicode-macro undefs are permanent
+    and are documented as such above.
+
+Upstream deletions are not automatically ours
+    Wine 11 deletes DllGetVersion and URLSubRegQueryA from
+    dlls/shdocvw/shdocvw_main.c, having moved their functionality
+    elsewhere. Our shdocvw.spec still exports both - DllGetVersion at
+    "@ stdcall -private" and URLSubRegQueryA at 151 - and we implement
+    them, so following the deletion would leave two dangling exports. Keep
+    them, as with WIN32_NO_STATUS.
+
+Components we forked hard are not sync candidates
+    A few modules carry a ReactOS implementation of the code while only the
+    .spec and .rc came from Wine. Upstream deltas to those cannot be merged;
+    they would have to be reimplemented. Measured against Wine-11.18:
+
+      dll/win32/xinput1_3, xinput9_1_0   ours are older from-scratch
+                                         implementations of a different shape
+                                         (xinput9_1_0 is 39 lines against
+                                         upstream's 135)
+      dll/win32/wmvcore/reader.c         ~41% Wine lineage, mostly stubs,
+                                         while upstream's async_reader.c is
+                                         a real implementation. Wine-11.18
+                                         only changes two lines there (a
+                                         CoInitializeEx/CoUninitialize bracket
+                                         around the reader thread), but they
+                                         land in a function we do not have.
+      dll/win32/cabinet                  our CMake build has no equivalent of
+                                         Wine's VER_PRODUCTVERSION and the
+                                         11.18 delta adds a whole new API
+                                         (compressapi.c plus six exports and
+                                         include/compressapi.h), so it is an
+                                         addition rather than a merge.
+      dll/win32/wldap32                  a mixed case rather than a full
+                                         deferral: our files are 33-87% Wine
+                                         lineage, but the small fixes in
+                                         11.18 were still separable and were
+                                         taken - see the note below on
+                                         picking hunks out of a forked file.
+                                         The one part not ported is the DC
+                                         discovery feature in init.c.
+      dll/win32/bcrypt                   our copy is a fork of an older Wine
+                                         plus three crypto backends of our
+                                         own: gnutls.c, mbedtls.c and
+                                         commoncrypto.c, 5940 lines between
+                                         them, each providing hash_init,
+                                         hash_update, hash_finish,
+                                         hmac_* and key_asymmetric_*.
+                                         Wine 11 deleted exactly that layer
+                                         and rewrote the whole module on
+                                         SymCrypt - the diff goes from 0 to
+                                         159 references to SymCrypt and adds
+                                         #include "symcrypt.h", and its
+                                         new symcrypt.c-style helpers
+                                         (SymCryptHashAppend,
+                                         SymCryptHmacAppend,
+                                         SymCryptRsakeyFree,
+                                         SymCryptEckeyFree) are what the
+                                         new code calls. We have no
+                                         symcrypt.h anywhere under
+                                         sdk/include, so the delta cannot
+                                         land: +3088/-1355 lines of
+                                         hunk, 38 of them, every one tied
+                                         to the new library.
+
+                                         The same release adds ECC P-521,
+                                         ChaCha20-Poly1305, AES-GMAC,
+                                         HKDF and the TLS 1.1/1.2 KDFs,
+                                         all on top of SymCrypt.
+                                         BCryptKeyDerivation already exists
+                                         here for PBKDF2 only, which is why
+                                         the .spec needed no change: it is
+                                         already @ stdcall and already has
+                                         a definition, and the file's
+                                         invariant holds - 39 stdcall
+                                         exports all defined, 23 stubs none
+                                         defined.
+
+                                         One hunk was separable and was
+                                         taken: the AES
+                                         BCRYPT_MESSAGE_BLOCK_LENGTH
+                                         property, which reports 1 and
+                                         rejects being set with
+                                         STATUS_INVALID_PARAMETER. It
+                                         needed BCRYPT_MESSAGE_BLOCK_LENGTH
+                                         added to psdk/bcrypt.h, since our
+                                         header is ReactOS's own and did not
+                                         define it. Two other small hunks
+                                         were examined and refused: the
+                                         added hash->hdr.magic check in
+                                         BCryptDestroyHash is redundant
+                                         here because get_object() already
+                                         validates the magic, and the
+                                         chaining-mode *ret_size change from
+                                         a hardcoded 64 to a computed value
+                                         is behaviourally identical for
+                                         every mode string we support (all
+                                         are 15 characters, so both give
+                                         64).
+
+    Note also that our file names differ for these: upstream's async_reader.c
+    is our reader.c, and upstream's main.c is our <module>_main.c. Match by
+    content, not by name, before deciding a file is new.
+
+A spec's parameter list does not change the built binary
+    It is natural to worry when upstream rewrites a .spec parameter list,
+    e.g. imagehlp.spec changing several -import entries from (long long) to
+    (long ptr) between Wine 10.0 and 11.18. In ReactOS those changes are
+    cosmetic:
+
+      - sdk/tools/spec2def/spec2def.c writes the stdcall suffix from
+        pexp->nStackBytes only when giArch == ARCH_X86; for every other
+        architecture it prints the undecorated name and never looks at the
+        argument sizes.
+      - On i386 long and ptr are both 4 bytes, so nStackBytes is unchanged
+        and the decoration is identical either way.
+
+    So a spec parameter list cannot introduce an argument-size mismatch, and
+    taking upstream's is safe. It also does not have to agree with the
+    signature our own dbghelp.spec lists for the same forwarded function,
+    though there is no harm in aligning them.
+
+Wordpad keeps its own window placement
+    Wine-11.18 replaces wordpad's manual MonitorFromRect/IntersectRect
+    clamping with a WINDOWPLACEMENT and SetWindowPlacement in WinMain. Ours
+    uses ReactOS's class and title strings and its own rect handling, so only
+    the SW_SHOW/SW_HIDE changes were taken; the placement rework was left
+    out.
