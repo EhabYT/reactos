@@ -215,7 +215,7 @@ dll/win32/uxtheme             # Forked (spec ordinals and ShouldAppsUseDarkMode 
 dll/win32/vbscript            # Synced to Wine-10.0
 dll/win32/version             # Synced to WineStaging-4.18 (Requires kernelbase)
 dll/win32/vssapi              # Synced to WineStaging-4.18
-dll/win32/wbemdisp            # Synced to WineStaging-4.18
+dll/win32/wbemdisp            # Synced to WineStaging-4.18 (locator.c stays a reduction, main.c fix taken - see below)
 dll/win32/wbemprox            # Synced to WineStaging-4.18
 dll/win32/windowscodecs       # Synced to Wine-10.0
 dll/win32/windowscodecsext    # Synced to Wine-10.0
@@ -449,6 +449,23 @@ Deliberate reductions are not upstream bugs
     base/applications/cmdutils/reg has no REG_QWORD support. Upstream changes
     that live inside such a removed block cannot be applied and should not be
     silently re-added; keep the reduction and note it.
+
+    A large enough reduction makes the whole file unmergeable, which is why
+    dll/win32/wbemdisp/locator.c is deferred. Our copy is Wine's file about a
+    thousand lines shorter: the ISWbemMethod, ISWbemMethodSet and
+    ISWbemNamedValue/ISWbemNamedValueSet families are not there, and neither
+    are the struct object internals they use. Wine 11 rewrites
+    EnumVARIANT_create to serve all three enumerations from one function
+    taking a new enum enum_variant_type - our copy still has the older
+    IEnumWbemClassObject-only version - and adds ISWbemQualifierSet and
+    ISWbemObjectPath implementations that build on the removed object model.
+    A three-way merge gives 22 conflicts. Two of the rewrite's three callers
+    are in the code we dropped, so a partial take is not worth attempting.
+
+    The part that does not depend on any of that was taken on its own:
+    main.c's factory_QueryInterface now clears *obj before returning
+    E_NOINTERFACE. Check a reduced file for one or two separable hunks before
+    deferring the whole component.
 
 A shared psdk header can block a component sync
     Some Wine modules call proxy helpers that widl generates from a shared

@@ -204,6 +204,11 @@ def classify():
         local_dirs = [p for p in e["paths"] if os.path.isdir(os.path.join(ROS, p))]
         if not local_dirs:
             continue
+        # Order matters. "Synced to Wine-11.18 (..., see below)" is a finished
+        # component that carries a recorded deviation - six entries read that
+        # way, for kept version resources, the WIN32_NO_STATUS removal and
+        # imagehlp's spec signatures. Plain "(... - see below)" without a
+        # release name is the deferred form. So test for the release first.
         if "Wine-11.18" in e["comment"]:
             b["done"] += 1
             continue
