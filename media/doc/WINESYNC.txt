@@ -176,7 +176,7 @@ dll/win32/query               # Synced to Wine-10.0
 dll/win32/rasapi32            # Synced to Wine-10.0
 dll/win32/regapi              # Synced to Wine-10.0
 dll/win32/resutils            # Synced to Wine-10.0
-dll/win32/riched20            # Synced to Wine-10.0
+dll/win32/riched20            # Synced to Wine-11.18
 dll/win32/riched32            # Synced to Wine-11.18
 dll/win32/rpcrt4              # Synced to Wine-10.0
 dll/win32/rsabase             # Synced to Wine-10.0
@@ -683,6 +683,29 @@ Our spelling can differ from upstream's on purpose
     structure and keeping the local name is right; verify() will report those
     three lines as MISSING and that is expected, the same as winhlp32's %u
     for LONG.
+
+A backport guard is a note to your future self
+    Our copy of riched20/writer.c had this:
+
+        #ifdef __REACTOS__ /* Import fix from Wine-11.3 */
+            if ((ULONG)fmt->rgxTabs[i] >> 28 <= 5)
+              strcat(props, leader[(ULONG)fmt->rgxTabs[i] >> 28]);
+        #else
+            if (fmt->rgxTabs[i] >> 28 <= 5)
+              strcat(props, leader[fmt->rgxTabs[i] >> 28]);
+        #endif
+
+    Wine 11.18 made the cast unconditional, so the sync's merge reported a
+    conflict where the two sides were really the same fix - ours from a
+    backport, upstream's native. The guard and its comment are a to-do that
+    says "drop me when we reach Wine-11.3"; 11.18 is past that, so the guard
+    came off and the bare upstream lines stayed.
+
+    Worth grepping for when syncing: an #ifdef __REACTOS__ whose comment
+    names a Wine version is not a permanent deviation, and verify() will
+    report the removed guard as a changed marker count. Not every guard is
+    like this - WIN32_NO_STATUS and the unicode-macro undefs are permanent
+    and are documented as such above.
 
 Upstream deletions are not automatically ours
     Wine 11 deletes DllGetVersion and URLSubRegQueryA from
