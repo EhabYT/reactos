@@ -149,7 +149,7 @@ dll/win32/msxml3              # Synced to Wine-10.0
 dll/win32/msxml4              # Synced to Wine-11.18 (kept version resource, see below)
 dll/win32/msxml6              # Synced to Wine-11.18 (kept version resource, see below)
 dll/win32/nddeapi             # Synced to Wine-10.0
-dll/win32/netapi32            # Forked at Wine-1.3.34
+dll/win32/netapi32            # Forked at Wine-1.3.34 (11.18 delta needs unixlib - see below)
 dll/win32/netutils            # Synced to Wine-11.18 (upstream's WIN32_NO_STATUS removal not applied - see below)
 dll/win32/npptools            # Synced to Wine-10.0
 dll/win32/ntdsapi             # Synced to Wine-11.18
@@ -190,7 +190,7 @@ dll/win32/security            # Forked (different .spec)
 dll/win32/sensapi             # Synced to Wine-10.0
 dll/win32/setupapi            # Forked at Wine-20050524
 dll/win32/shdoclc             # Synced to Wine-10.0
-dll/win32/shdocvw             # Synced to WineStaging-4.18
+dll/win32/shdocvw             # Synced to WineStaging-4.18 (upstream deletes two exports we still provide - see below)
 dll/win32/shell32             # Forked at Wine-20071011
 dll/win32/shfolder            # Synced to Wine-10.0
 dll/win32/shlwapi             # Synced to WineStaging-3.3
@@ -211,7 +211,7 @@ dll/win32/updspapi            # Synced to Wine-10.0
 dll/win32/url                 # Synced to Wine-10.0
 dll/win32/urlmon              # Synced to Wine-10.0
 dll/win32/usp10               # Synced to Wine-11.18 (upstream delta was tests/ only)
-dll/win32/uxtheme             # Forked
+dll/win32/uxtheme             # Forked (spec ordinals and ShouldAppsUseDarkMode - see below)
 dll/win32/vbscript            # Synced to Wine-10.0
 dll/win32/version             # Synced to WineStaging-4.18 (Requires kernelbase)
 dll/win32/vssapi              # Synced to WineStaging-4.18
@@ -530,6 +530,37 @@ Wine moved version resources into its Makefiles
 
     The same reasoning covers a deleted .rc we have no counterpart for at all:
     nothing to do.
+
+A spec is only mergeable if the ordinals still line up
+    uxtheme is the clearest case. Wine 11 adds four Immersive colour
+    functions to system.c and the matching spec entries, but our
+    uxtheme.spec is not Wine's: it is 29% Wine lineage and reordered, so
+    our ordinal 49 is GetThemeAppProperties while Wine's 49 is "stub @".
+    Taking upstream's spec hunk would collide with an existing export.
+
+    The component also keeps two spec files, uxtheme.spec and
+    uxtheme_vista.spec, chosen by DLL_EXPORT_VERSION in CMakeLists.txt, and
+    the vista one is where the newer ordinals live (uxtheme_vista.spec:102
+    is already "102 stub GetThemeStream"). Adding an export correctly means
+    deciding which file it belongs in and which ordinal is free, not
+    applying a diff.
+
+    On top of that, GetImmersiveColorFromColorSetEx calls
+    ShouldAppsUseDarkMode, which Wine has had since well before 10.0 but
+    our uxtheme does not implement at all, so the Immersive block cannot
+    come across on its own.
+
+    The draw.c part is separable and small - a null-options fix in
+    DrawThemeTextEx, the parentless-window early return, and two new
+    stubs - and is worth doing as its own change with the ordinal work.
+
+Upstream deletions are not automatically ours
+    Wine 11 deletes DllGetVersion and URLSubRegQueryA from
+    dlls/shdocvw/shdocvw_main.c, having moved their functionality
+    elsewhere. Our shdocvw.spec still exports both - DllGetVersion at
+    "@ stdcall -private" and URLSubRegQueryA at 151 - and we implement
+    them, so following the deletion would leave two dangling exports. Keep
+    them, as with WIN32_NO_STATUS.
 
 Components we forked hard are not sync candidates
     A few modules carry a ReactOS implementation of the code while only the
