@@ -53,6 +53,7 @@ typedef NTSTATUS *PNTSTATUS;
 #define BCRYPT_KEY_LENGTHS          L"KeyLengths"
 #define BCRYPT_KEY_OBJECT_LENGTH    L"KeyObjectLength"
 #define BCRYPT_KEY_STRENGTH         L"KeyStrength"
+#define BCRYPT_MESSAGE_BLOCK_LENGTH L"MessageBlockLength"
 #define BCRYPT_OBJECT_LENGTH        L"ObjectLength"
 #define BCRYPT_PADDING_SCHEMES      L"PaddingSchemes"
 #define BCRYPT_PROVIDER_HANDLE      L"ProviderHandle"

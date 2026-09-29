@@ -61,7 +61,7 @@ dll/win32/atl80               # Synced to Wine-10.0
 dll/win32/atl100              # Synced to Wine-10.0
 dll/win32/avifil32            # Synced to Wine-11.18
 dll/win32/avrt                # Synced to Wine-10.0
-dll/win32/bcrypt              # Synced to WineStaging-10.6 (+ winetest synced to d9148e48a3257ae80361f02f0bb7a2d607ef18ec)
+dll/win32/bcrypt              # Synced to WineStaging-10.6 (+ winetest synced to d9148e48a3257ae80361f02f0bb7a2d607ef18ec); took the AES MessageBlockLength property from 11.18, the rest of that release needs SymCrypt - see below
 dll/win32/bcryptprimitives    # Synced to Wine-11.18
 dll/win32/bluetoothapis       # Synced to Wine-10.0 (11.18 delta needs four new headers - see below)
 dll/win32/cabinet             # Synced to Wine-10.0 (11.18 adds compressapi.c and the Compression API - see below)
@@ -668,6 +668,64 @@ Components we forked hard are not sync candidates
                                          (compressapi.c plus six exports and
                                          include/compressapi.h), so it is an
                                          addition rather than a merge.
+      dll/win32/bcrypt                   our copy is a fork of an older Wine
+                                         plus three crypto backends of our
+                                         own: gnutls.c, mbedtls.c and
+                                         commoncrypto.c, 5940 lines between
+                                         them, each providing hash_init,
+                                         hash_update, hash_finish,
+                                         hmac_* and key_asymmetric_*.
+                                         Wine 11 deleted exactly that layer
+                                         and rewrote the whole module on
+                                         SymCrypt - the diff goes from 0 to
+                                         159 references to SymCrypt and adds
+                                         #include "symcrypt.h", and its
+                                         new symcrypt.c-style helpers
+                                         (SymCryptHashAppend,
+                                         SymCryptHmacAppend,
+                                         SymCryptRsakeyFree,
+                                         SymCryptEckeyFree) are what the
+                                         new code calls. We have no
+                                         symcrypt.h anywhere under
+                                         sdk/include, so the delta cannot
+                                         land: +3088/-1355 lines of
+                                         hunk, 38 of them, every one tied
+                                         to the new library.
+
+                                         The same release adds ECC P-521,
+                                         ChaCha20-Poly1305, AES-GMAC,
+                                         HKDF and the TLS 1.1/1.2 KDFs,
+                                         all on top of SymCrypt.
+                                         BCryptKeyDerivation already exists
+                                         here for PBKDF2 only, which is why
+                                         the .spec needed no change: it is
+                                         already @ stdcall and already has
+                                         a definition, and the file's
+                                         invariant holds - 39 stdcall
+                                         exports all defined, 23 stubs none
+                                         defined.
+
+                                         One hunk was separable and was
+                                         taken: the AES
+                                         BCRYPT_MESSAGE_BLOCK_LENGTH
+                                         property, which reports 1 and
+                                         rejects being set with
+                                         STATUS_INVALID_PARAMETER. It
+                                         needed BCRYPT_MESSAGE_BLOCK_LENGTH
+                                         added to psdk/bcrypt.h, since our
+                                         header is ReactOS's own and did not
+                                         define it. Two other small hunks
+                                         were examined and refused: the
+                                         added hash->hdr.magic check in
+                                         BCryptDestroyHash is redundant
+                                         here because get_object() already
+                                         validates the magic, and the
+                                         chaining-mode *ret_size change from
+                                         a hardcoded 64 to a computed value
+                                         is behaviourally identical for
+                                         every mode string we support (all
+                                         are 15 characters, so both give
+                                         64).
 
     Note also that our file names differ for these: upstream's async_reader.c
     is our reader.c, and upstream's main.c is our <module>_main.c. Match by
