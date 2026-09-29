@@ -63,7 +63,7 @@ dll/win32/avifil32            # Synced to Wine-11.18
 dll/win32/avrt                # Synced to Wine-10.0
 dll/win32/bcrypt              # Synced to WineStaging-10.6 (+ winetest synced to d9148e48a3257ae80361f02f0bb7a2d607ef18ec)
 dll/win32/bcryptprimitives    # Synced to Wine-11.18
-dll/win32/bluetoothapis       # Synced to Wine-10.0
+dll/win32/bluetoothapis       # Synced to Wine-10.0 (11.18 delta needs four new headers - see below)
 dll/win32/cabinet             # Synced to Wine-10.0 (11.18 adds compressapi.c and the Compression API - see below)
 dll/win32/clusapi             # Synced to Wine-10.0
 dll/win32/combase             # Synced to Wine-10.0
@@ -166,7 +166,7 @@ dll/win32/olesvr32            # Synced to Wine-10.0
 dll/win32/olethk32            # Synced to Wine-10.0
 dll/win32/pdh                 # Synced to Wine-11.18 (psdk/pdh.h gained the *_ITEM types)
 dll/win32/pidgen              # Synced to Wine-10.0
-dll/win32/powrprof            # Forked at Wine-1.0rc5
+dll/win32/powrprof            # Forked at Wine-1.0rc5 (upstream's two new exports not taken - see below)
 dll/win32/printui             # Synced to Wine-10.0
 dll/win32/propsys             # Synced to Wine-11.18
 dll/win32/pstorec             # Synced to Wine-10.0
@@ -501,6 +501,32 @@ A shared psdk header can block a component sync
     Note that our pdh.h has dropped Wine's DECL_PDH_TYPE_AW macro, so add the
     plain _A/_W structs and keep WINELIB_NAME_AW for the generic names.
 
+    bluetoothapis is the largest instance so far, and it is deferred rather
+    than attempted. Wine 11 turns the BluetoothFindFirstDevice,
+    BluetoothFindNextDevice, BluetoothFindDeviceClose, BluetoothGetDeviceInfo,
+    BluetoothGetRadioInfo, BluetoothIsConnectable, BluetoothEnableDiscovery,
+    BluetoothEnableIncomingConnections, BluetoothAuthenticateDeviceEx,
+    BluetoothRegisterForAuthenticationEx and BluetoothSendAuthenticationResponseEx
+    stubs into real implementations, adds gatt.c with the BluetoothGATT
+    entry points, and adds a resource for the pairing wizard's strings. Four
+    headers it needs do not exist here at all: bthledef.h, bthioctl.h,
+    bluetoothleapis.h and wine/winebth.h. bluetoothapis.h itself is missing
+    BLUETOOTH_PIN_INFO, BLUETOOTH_OOB_DATA_INFO,
+    BLUETOOTH_NUMERIC_COMPARISON_INFO, BLUETOOTH_PASSKEY_INFO,
+    BLUETOOTH_AUTHENTICATE_RESPONSE, BTH_MAX_PIN_SIZE and two prototypes,
+    and the authentication path also wants CM_Register_Notification and
+    friends from cfgmgr32.h. Wine's cfgmgr32.h delta for those is 392 lines
+    and cannot be pasted in: our cfgmgr32.h is 3224 lines of ReactOS's own
+    and already defines CM_GETIDLIST_FILTER_NONE, LOG_CONF,
+    CM_OPEN_CLASS_KEY_INSTALLER and CR_SUCCESS, so the additions would have
+    to be applied selectively by hand, without a compiler to check them.
+    The new code also talks to Wine's bluetooth driver through the IOCTLs in
+    winebth.h, which ReactOS's own bluetooth stack does not implement.
+
+    There is no separable part to take: every removed line in main.c is a
+    stub the new code replaces. Check that before deferring, as the wbemdisp
+    entry above describes.
+
 The ledger can understate what is already synced
     A component whose entry says Wine-10.0 may already carry an upstream
     change, because ReactOS fixed the same bug independently. dll/win32/mciavi32
@@ -560,6 +586,17 @@ A spec is only mergeable if the ordinals still line up
     uxtheme.spec is not Wine's: it is 29% Wine lineage and reordered, so
     our ordinal 49 is GetThemeAppProperties while Wine's 49 is "stub @".
     Taking upstream's spec hunk would collide with an existing export.
+
+    powrprof is the milder version of the same problem. There are no explicit
+    ordinals in either spec - they come from the order of the lines - and our
+    spec is sorted alphabetically while Wine's is in historical order.
+    Wine 11 adds PowerRegisterForEffectivePowerModeNotifications, which we do
+    not have, and PowerReadACValueIndex, which we have had for years:
+    our powrprof.c is ReactOS's own (12% Wine lineage) and already exports
+    PowerReadACValue, PowerReadACValueIndex, PowerReadDCValueIndex and
+    PowerWriteDCValueIndex. Inserting Wine's two lines mid-file would
+    renumber every export after them, so the only export worth taking is one
+    that needs a new function written, not an upstream hunk merged.
 
     The component also keeps two spec files, uxtheme.spec and
     uxtheme_vista.spec, chosen by DLL_EXPORT_VERSION in CMakeLists.txt, and
