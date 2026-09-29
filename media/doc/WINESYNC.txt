@@ -121,7 +121,7 @@ dll/win32/msacm32.drv         # Synced to Wine-10.0
 dll/win32/msadp32.acm         # Synced to Wine-10.0
 dll/win32/mscat32             # Synced to Wine-10.0
 dll/win32/mscms               # Synced to WineStaging-4.18
-dll/win32/mscoree             # Synced to Wine-10.0
+dll/win32/mscoree             # Synced to Wine-11.18 (get_mono_path_unix is ReactOS-guarded)
 dll/win32/msftedit            # Synced to Wine-11.18
 dll/win32/msg711.acm          # Synced to Wine-10.0
 dll/win32/msgsm32.acm         # Synced to WineStaging-4.0
@@ -168,7 +168,7 @@ dll/win32/pdh                 # Synced to Wine-11.18 (psdk/pdh.h gained the *_IT
 dll/win32/pidgen              # Synced to Wine-10.0
 dll/win32/powrprof            # Forked at Wine-1.0rc5
 dll/win32/printui             # Synced to Wine-10.0
-dll/win32/propsys             # Synced to Wine-10.0
+dll/win32/propsys             # Synced to Wine-11.18
 dll/win32/pstorec             # Synced to Wine-10.0
 dll/win32/qmgr                # Synced to Wine-11.18 (upstream delta was tests/ only)
 dll/win32/qmgrprxy            # Synced to Wine-10.0
