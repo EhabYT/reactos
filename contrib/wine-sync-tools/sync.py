@@ -38,12 +38,30 @@ THRESHOLD = 70.0  # % of local lines shared with the wine baseline
 # ---------------------------------------------------------------- mapping
 
 def wine_dirs_for(local_path):
-    """Candidate Wine directories for a local path like dll/win32/mpr."""
+    """Candidate Wine directories for a local path like dll/win32/mpr.
+
+    Take the most specific directory that exists, not a union: ReactOS does
+    not mirror Wine's layout everywhere. dll/win32/winmm/midimap is Wine's
+    top-level dlls/midimap, and modules/rostests/winetests/<mod> holds
+    Wine's dlls/<mod>/tests. Falling back to the parent module made those
+    entries inherit the whole of winmm's delta.
+    """
     p = local_path.strip("/")
     parts = p.split("/")
     cands = []
     if len(parts) >= 3 and parts[0] == "dll" and parts[1] == "win32":
-        cands.append("dlls/" + parts[2])
+        mod, rest = parts[2], parts[3:]
+        if not rest:
+            cands.append("dlls/" + mod)
+        else:
+            # exact nesting, then Wine's flat layout (dlls/midimap), then a
+            # ReactOS-only subdirectory such as lang/ that belongs to the
+            # parent module
+            cands += ["dlls/" + mod + "/" + "/".join(rest),
+                      "dlls/" + "/".join(rest),
+                      "dlls/" + mod]
+    elif p.startswith("modules/rostests/winetests/"):
+        cands.append("dlls/" + parts[3] + "/tests")
     elif p.startswith("dll/directx/wine/"):
         cands.append("dlls/" + p.split("/")[3])
     elif len(parts) >= 3 and parts[0] == "base" and parts[1] == "applications":
@@ -57,12 +75,14 @@ def wine_dirs_for(local_path):
     else:
         cands.append("dlls/" + parts[-1])
     named = [c for c in cands if os.path.isdir(os.path.join(W11, c))]
+    if named:
+        return named[:1]
     base = os.path.basename(p)
     for top in ("dlls", "programs", "libs", "tools"):
         for c in (f"{top}/{base}", f"{top}/{base.lower()}"):
-            if os.path.isdir(os.path.join(W11, c)) and c not in named:
-                named.append(c)
-    return named
+            if os.path.isdir(os.path.join(W11, c)):
+                return [c]
+    return []
 
 
 def rospath(wrel, local_dir=None):
@@ -178,7 +198,8 @@ def delta_for(local_dir):
 
 def classify():
     b = {"done": 0, "mergeable": [], "deferred": [], "otherimpl": [],
-         "nodelta": [], "unmapped": [], "nocounterpart": [], "versiononly": []}
+         "nodelta": [], "unmapped": [], "nocounterpart": [], "versiononly": [],
+         "tests": []}
     for e in parse_ledger():
         local_dirs = [p for p in e["paths"] if os.path.isdir(os.path.join(ROS, p))]
         if not local_dirs:
@@ -188,6 +209,9 @@ def classify():
             continue
         if "see below" in e["comment"]:
             b["deferred"].append((e, local_dirs))
+            continue
+        if all(d.startswith("modules/rostests/winetests/") for d in local_dirs):
+            b["tests"].append((e, local_dirs))
             continue
         rec = (e, local_dirs, [])
         for d in local_dirs:
@@ -226,6 +250,7 @@ def cmd_status(_):
          f"Changed upstream but not Wine's code: **{len(b['otherimpl'])}**  ",
          f"Changed upstream, no local counterpart: **{len(b['nocounterpart'])}**  ",
          f"No upstream delta: **{len(b['nodelta'])}**  ",
+         f"Upstream test suites only: **{len(b['tests'])}**  ",
          f"Not mapped to a Wine directory: **{len(b['unmapped'])}**", "",
          "## Mergeable", ""]
     for e, local_dirs, groups in sorted(b["mergeable"],
@@ -275,6 +300,13 @@ def cmd_status(_):
         names = ", ".join(f"`{f[1]}`" for _, _, fs in groups for f in fs)
         L.append(f"\n- `{', '.join(local_dirs)}`: {names}")
 
+    if b["tests"]:
+        L.append("\n\n## Upstream test suites only\n")
+        L.append("We keep our own copies under modules/rostests/winetests;\n"
+                 "Wine's test deltas are not mergeable.\n")
+        for e, local_dirs in sorted(b["tests"], key=lambda r: r[1][0]):
+            L.append(f"\n- `{', '.join(local_dirs)}` - {e['comment'] or 'no comment'}")
+
     L.append("\n\n## No upstream delta\n")
     L.append(", ".join(f"`{e['paths'][0]}`" for e, *_ in
                        sorted(b["nodelta"], key=lambda r: r[0]["paths"][0])))
@@ -288,7 +320,7 @@ def cmd_status(_):
 
     open(REPORT, "w", encoding="utf-8").write("\n".join(L) + "\n")
     for k in ("done", "mergeable", "deferred", "versiononly", "otherimpl",
-              "nocounterpart", "nodelta", "unmapped"):
+              "nocounterpart", "nodelta", "tests", "unmapped"):
         v = b[k] if isinstance(b[k], int) else len(b[k])
         print(f"{k:15s} {v}")
     print(f"report          {REPORT}")
