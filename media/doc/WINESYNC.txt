@@ -84,7 +84,7 @@ dll/win32/dwmapi              # Synced to Wine-11.18 (DWMWINDOWATTRIBUTE is a re
 dll/win32/faultrep            # Synced to Wine-10.0
 dll/win32/feclient            # Synced to Wine-10.0
 dll/win32/fontsub             # Synced to Wine-10.0
-dll/win32/fusion              # Synced to Wine-10.0
+dll/win32/fusion              # Synced to Wine-11.18 (WIN32_NO_STATUS in assembly.c kept - see below)
 dll/win32/gdiplus             # Synced to Wine-10.0
 dll/win32/hhctrl.ocx          # Synced to Wine-10.0
 dll/win32/hlink               # Synced to Wine-10.0
