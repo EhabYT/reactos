@@ -120,7 +120,7 @@ dll/win32/msacm32             # Synced to WineStaging-4.18
 dll/win32/msacm32.drv         # Synced to Wine-10.0
 dll/win32/msadp32.acm         # Synced to Wine-10.0
 dll/win32/mscat32             # Synced to Wine-10.0
-dll/win32/mscms               # Synced to WineStaging-4.18
+dll/win32/mscms               # Synced to Wine-11.18 (three Wcs stubs and rsrc.rc not taken - see below)
 dll/win32/mscoree             # Synced to Wine-11.18 (get_mono_path_unix is ReactOS-guarded)
 dll/win32/msftedit            # Synced to Wine-11.18
 dll/win32/msg711.acm          # Synced to Wine-10.0
@@ -467,6 +467,18 @@ Deliberate reductions are not upstream bugs
     E_NOINTERFACE. Check a reduced file for one or two separable hunks before
     deferring the whole component.
 
+    A spec can carry the same kind of reduction. dll/win32/mscms exports
+    WcsGetDefaultColorProfile, WcsGetDefaultColorProfileSize and
+    WcsGetDefaultRenderingIntent as "@ stub" where Wine has had them as
+    "@ stdcall" with implementations since well before 10.0. They are not
+    part of the 11.18 delta, so they were left alone: taking them would mean
+    importing three functions that no upstream change asks for. They are
+    stubs in Wine too - each one only prints a FIXME and sets
+    ERROR_CALL_NOT_IMPLEMENTED - so the difference is a slightly better
+    message rather than behaviour. The file stays self-consistent, which is
+    what matters: every "@ stdcall" line has a definition and no "@ stub"
+    line has one. Re-check that invariant after editing any spec.
+
 A shared psdk header can block a component sync
     Some Wine modules call proxy helpers that widl generates from a shared
     interface description in sdk/include/psdk. If the interface is not defined
@@ -558,6 +570,18 @@ Check that a file is actually Wine's before merging into it
     the odbccp32/cryptnet/cryptui sources (99-100%) are Wine's code and merge
     normally. Diff the file against the Wine baseline and look at how much is
     unchanged before trusting a merge.
+
+A new resource file is not automatically worth taking
+    Wine 11 added dlls/mscms/rsrc.rc, which is one line of resource script
+    bundling an srgb2014.icc data blob as resource 1. Nothing in Wine's own C
+    code reads it - the whole tree references that file only from the .rc
+    itself - so it looks like groundwork for a later release. It was not
+    taken. Our resource compiler has no WINE_DATA_FILE macro, which is what
+    the line uses, and we do not carry the .icc, so the file would not even
+    build until an rc header and the blob were added too, for no consumer.
+
+    When a new upstream file is a resource, check whether any source file
+    references what it defines before adding it.
 
 Wine moved version resources into its Makefiles
     From Wine 11 onwards, version information often no longer lives in the
