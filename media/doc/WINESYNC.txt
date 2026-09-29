@@ -228,7 +228,7 @@ dll/win32/winmm/wavemap       # Forked at Wine-20050628
 dll/win32/winscard            # Synced to WineStaging-4.18 (Newer versions require pcsclite)
 dll/win32/wintrust            # Synced to Wine-11.18
 dll/win32/winusb              # Synced to Wine-10.0
-dll/win32/wldap32             # Synced to WineStaging-4.18
+dll/win32/wldap32             # Synced to WineStaging-4.18 (took the 11.18 fixes; the DC discovery feature is not ported - see below)
 dll/win32/wmi                 # Synced to Wine-10.0
 dll/win32/wmiutils            # Synced to Wine-10.0
 dll/win32/wmvcore             # Synced to WineStaging-4.18 (our async_reader.c is a stubbed fork - see below)
@@ -479,6 +479,41 @@ Deliberate reductions are not upstream bugs
     what matters: every "@ stdcall" line has a definition and no "@ stub"
     line has one. Re-check that invariant after editing any spec.
 
+Picking hunks out of a forked file
+    A file can be too far from Wine for a merge to be meaningful and still
+    contain individual fixes worth having. wldap32 in 11.18 is the case: our
+    copies are between 33% and 87% Wine lineage, and the full delta reports
+    work in seven files, but three of the changes are self-contained and
+    land in code we do have.
+
+    misc.c's strnAtoW() wrote its terminator with *++d = 0 instead of
+    *d = 0, one byte past the end of everything it had just written. page.c
+    called ber_flatten() before checking whether ber_printf() had failed,
+    and leaked the berval when the copy of it could not be allocated. option.c
+    had LDAP_OPT_GETDSNAME_FLAGS and LDAP_OPT_PROMPT_CREDENTIALS in its
+    "unsupported option" lists; Wine 11 implements both, so they were moved
+    out of the lists and given the same stub bodies upstream uses. In all four
+    cases our code was the same shape as upstream's, which is what made them
+    separable - the check is whether the lines upstream changed exist in our
+    file at all, not whether the file as a whole is close.
+
+    Two of page.c's other fixes were skipped because our page.c has no
+    search->cookie field for them to apply to, and bind.c's fixes were
+    skipped for the same reason: our bind.c is a different implementation
+    without the SASL default-credentials function they change. ld_host in
+    winldap_private.h is PCHAR here and unused, so changing it to WCHAR would
+    have no effect on its own.
+
+    What is not ported is init.c's DC discovery. Wine 11 makes ldap_connect()
+    call DsGetDcNameW() on the stored host and, on success, point the
+    connection at the returned domain controller, which is why ld_host became
+    a WCHAR * that is allocated in ldap_initW and freed in the two destroy
+    paths. That is a feature with its own behaviour, not a fix: it changes
+    which server a connection ends up talking to. ReactOS has dsgetdc.h,
+    lmcons.h, lmapibuf.h and NetApiBufferFree, so it could be ported, but it
+    should be done deliberately against our own host handling rather than
+    merged out of a diff.
+
 A shared psdk header can block a component sync
     Some Wine modules call proxy helpers that widl generates from a shared
     interface description in sdk/include/psdk. If the interface is not defined
@@ -668,6 +703,14 @@ Components we forked hard are not sync candidates
                                          (compressapi.c plus six exports and
                                          include/compressapi.h), so it is an
                                          addition rather than a merge.
+      dll/win32/wldap32                  a mixed case rather than a full
+                                         deferral: our files are 33-87% Wine
+                                         lineage, but the small fixes in
+                                         11.18 were still separable and were
+                                         taken - see the note below on
+                                         picking hunks out of a forked file.
+                                         The one part not ported is the DC
+                                         discovery feature in init.c.
       dll/win32/bcrypt                   our copy is a fork of an older Wine
                                          plus three crypto backends of our
                                          own: gnutls.c, mbedtls.c and
