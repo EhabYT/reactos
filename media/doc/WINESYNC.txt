@@ -221,7 +221,7 @@ dll/win32/windowscodecs       # Synced to Wine-10.0
 dll/win32/windowscodecsext    # Synced to Wine-10.0
 dll/win32/wing32              # Synced to Wine-10.0
 dll/win32/winhttp             # Synced to Wine-11.18 (socket.c taken, rsrc.rc kept - see below)
-dll/win32/wininet             # Synced to WineStaging-6.0rc1
+dll/win32/wininet             # Synced to WineStaging-6.0rc1 (urlcache, address handling and date parsing taken; the read path is still ours - see below)
 dll/win32/winmm               # Forked at Wine-20050628 (mci.c synced to Wine-11.18)
 dll/win32/winmm/midimap       # Forked at Wine-20050628
 dll/win32/winmm/wavemap       # Forked at Wine-20050628
@@ -764,6 +764,33 @@ A backport guard is a note to your future self
     report the removed guard as a changed marker count. Not every guard is
     like this - WIN32_NO_STATUS and the unicode-macro undefs are permanent
     and are documented as such above.
+
+A removed function can be a deliberate fork
+    wininet's http.c is 91% Wine lineage and still not mergeable as a whole,
+    because this fork took the read path out. Wine 10.0 already had
+    read_req_file() and HTTPREQ_SetFilePointer(), a seeking read path over the
+    request file, and object_vtbl_t had a SetFilePointer slot for it. Our
+    object_vtbl_t has nine members and no SetFilePointer, our HTTPREQVtbl has
+    nine initialisers where upstream's has ten, and neither function exists
+    here.
+
+    That makes the merge fail in a useful way once you look: upstream's
+    HTTPREQVtbl cannot be applied to our struct at all. What does NOT fail is
+    everything around it, and conflicts 4 and 6 of the http.c merge are whole
+    functions being offered back - git sees "upstream added a function where
+    ours has nothing". Taking them would not compile, and would not be wanted
+    even if it did.
+
+    Wine 11.18 builds on that path: http_request_t gains a state field,
+    object_header_t loses dwError, and every read/move operation reports
+    through req->state instead. Because the surrounding read logic is what
+    this fork replaced, that migration is a decision about our read path
+    rather than a merge, and it is deferred for now instead of guessed at.
+
+    So: when a component's lineage is high but its behaviour is still ours in
+    one area, check the vtbl. A struct with a different member count is the
+    clearest statement that a file is forked, and it is visible without
+    reading any logic.
 
 Upstream can fix a check by deleting it
     Not every removed bounds check is a regression. rpcrt4's

@@ -1187,6 +1187,7 @@ static BOOL HTTP_DoAuthorization( http_request_t *request, LPCWSTR pszAuthValue,
                                                 in.pvBuffer ? &in_desc : NULL,
                                                 0, &pAuthInfo->ctx, &out_desc,
                                                 &pAuthInfo->attr, &pAuthInfo->exp);
+        heap_free(in.pvBuffer);
         if (sec_status == SEC_E_OK)
         {
             pAuthInfo->finished = TRUE;
@@ -5103,12 +5104,14 @@ static DWORD HTTP_HttpSendRequestW(http_request_t *request, LPCWSTR lpszHeaders,
                 case HTTP_STATUS_MOVED:
                 case HTTP_STATUS_REDIRECT_KEEP_VERB:
                 case HTTP_STATUS_REDIRECT_METHOD:
+                case HTTP_STATUS_PERMANENT_REDIRECT:
                     new_url = get_redirect_url(request);
                     if(!new_url)
                         break;
 
                     if (wcscmp(request->verb, L"GET") && wcscmp(request->verb, L"HEAD") &&
-                        request->status_code != HTTP_STATUS_REDIRECT_KEEP_VERB)
+                        request->status_code != HTTP_STATUS_REDIRECT_KEEP_VERB &&
+                        request->status_code != HTTP_STATUS_PERMANENT_REDIRECT)
                     {
                         heap_free(request->verb);
                         request->verb = heap_strdupW(L"GET");
@@ -5294,7 +5297,8 @@ static DWORD HTTP_HttpEndRequestW(http_request_t *request, DWORD dwFlags, DWORD_
         case HTTP_STATUS_REDIRECT:
         case HTTP_STATUS_MOVED:
         case HTTP_STATUS_REDIRECT_METHOD:
-        case HTTP_STATUS_REDIRECT_KEEP_VERB: {
+        case HTTP_STATUS_REDIRECT_KEEP_VERB:
+        case HTTP_STATUS_PERMANENT_REDIRECT: {
             WCHAR *new_url;
 
             new_url = get_redirect_url(request);
@@ -5302,7 +5306,8 @@ static DWORD HTTP_HttpEndRequestW(http_request_t *request, DWORD dwFlags, DWORD_
                 break;
 
             if (wcscmp(request->verb, L"GET") && wcscmp(request->verb, L"HEAD") &&
-                request->status_code != HTTP_STATUS_REDIRECT_KEEP_VERB)
+                request->status_code != HTTP_STATUS_REDIRECT_KEEP_VERB &&
+                request->status_code != HTTP_STATUS_PERMANENT_REDIRECT)
             {
                 heap_free(request->verb);
                 request->verb = heap_strdupW(L"GET");
