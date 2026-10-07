@@ -144,11 +144,11 @@ BOOL decode_base85_guid( LPCWSTR str, GUID *guid )
             val = 0;
             base = 1;
         }
-        val += table_dec85[str[i]] * base;
         if( str[i] >= 0x80 )
             return FALSE;
         if( table_dec85[str[i]] == 0xff )
             return FALSE;
+        val += table_dec85[str[i]] * base;
         if( (i%5) == 4 )
             p[i/5] = val;
         base *= 85;
@@ -452,21 +452,6 @@ UINT MSIREG_DeleteUserFeaturesKey(LPCWSTR szProduct)
     lstrcpyW( keypath, L"Software\\Microsoft\\Installer\\Features\\" );
     lstrcatW( keypath, squashed_pc );
     return RegDeleteTreeW(HKEY_CURRENT_USER, keypath);
-}
-
-static UINT MSIREG_OpenInstallerFeaturesKey(LPCWSTR szProduct, HKEY *key, BOOL create)
-{
-    REGSAM access = KEY_WOW64_64KEY | KEY_ALL_ACCESS;
-    WCHAR squashed_pc[SQUASHED_GUID_SIZE], keypath[0x200];
-
-    if (!squash_guid( szProduct, squashed_pc )) return ERROR_FUNCTION_FAILED;
-    TRACE("%s squashed %s\n", debugstr_w(szProduct), debugstr_w(squashed_pc));
-
-    lstrcpyW(keypath, L"Software\\Microsoft\\Windows\\CurrentVersion\\Installer\\Features\\");
-    lstrcatW( keypath, squashed_pc );
-
-    if (create) return RegCreateKeyExW(HKEY_LOCAL_MACHINE, keypath, 0, NULL, 0, access, NULL, key, NULL);
-    return RegOpenKeyExW(HKEY_LOCAL_MACHINE, keypath, 0, access, key);
 }
 
 UINT MSIREG_OpenUserDataFeaturesKey(LPCWSTR szProduct, LPCWSTR szUserSid, MSIINSTALLCONTEXT context,
@@ -968,8 +953,16 @@ UINT WINAPI MsiDecomposeDescriptorW( LPCWSTR szDescriptor, LPWSTR szProduct,
     }
     if (szFeature)
     {
-        memcpy( szFeature, &szDescriptor[20], len*sizeof(WCHAR) );
-        szFeature[len] = 0;
+        if (!len) /* Single feature was not encoded, figure it out */
+        {
+            if (MsiEnumFeaturesW( szProduct, 0, szFeature, NULL ) != ERROR_SUCCESS)
+                return ERROR_INVALID_PARAMETER;
+        }
+        else
+        {
+            memcpy( szFeature, &szDescriptor[20], len*sizeof(WCHAR) );
+            szFeature[len] = 0;
+        }
     }
 
     len = p - szDescriptor + 1;
@@ -1079,13 +1072,18 @@ UINT WINAPI MsiEnumFeaturesW( const WCHAR *szProduct, DWORD index, WCHAR *szFeat
 {
     HKEY hkeyProduct = 0;
     DWORD r, sz;
+    MSIINSTALLCONTEXT context;
 
     TRACE( "%s, %lu, %p, %p\n", debugstr_w(szProduct), index, szFeature, szParent );
 
     if( !szProduct )
         return ERROR_INVALID_PARAMETER;
 
-    r = MSIREG_OpenInstallerFeaturesKey(szProduct,&hkeyProduct,FALSE);
+    r = msi_locate_product(szProduct, &context);
+    if ( r != ERROR_SUCCESS )
+        return r;
+
+    r = MSIREG_OpenUserDataFeaturesKey(szProduct, NULL, context, &hkeyProduct, FALSE);
     if( r != ERROR_SUCCESS )
         return ERROR_NO_MORE_ITEMS;
 

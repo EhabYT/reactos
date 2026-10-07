@@ -31,6 +31,7 @@ BEGIN
     IDS_INDEX        "&Índice"
     IDS_SEARCH       "&Pesquisar"
     IDS_FAVORITES    "&Favoritos"
+    IDS_SELECT_TOPIC "Select Topic"
 END
 
 MENU_POPUP MENU

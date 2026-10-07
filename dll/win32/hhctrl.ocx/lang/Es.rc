@@ -33,6 +33,8 @@ BEGIN
 
     IDS_HIDETABS     "&Ocultar Pestañas"
     IDS_SHOWTABS     "&Enseñar Pestañas"
+
+    IDS_SELECT_TOPIC "Select Topic"
 END
 
 STRINGTABLE

@@ -15,6 +15,7 @@ list(APPEND SOURCE
     net.c
     request.c
     session.c
+    socket.c
     url.c
     precomp.h)
 

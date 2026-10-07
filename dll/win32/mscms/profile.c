@@ -35,12 +35,11 @@
 
 #include "mscms_priv.h"
 
-static void basename( LPCWSTR path, LPWSTR name )
+static const WCHAR *basename( const WCHAR *path )
 {
-    INT i = lstrlenW( path );
-
+    int i = wcslen( path );
     while (i > 0 && path[i - 1] != '\\' && path[i - 1] != '/') i--;
-    lstrcpyW( name, &path[i] );
+    return &path[i];
 }
 
 static inline LPWSTR strdupW( LPCSTR str )
@@ -104,7 +103,6 @@ BOOL WINAPI AssociateColorProfileWithDeviceA( PCSTR machine, PCSTR profile, PCST
 
 static BOOL set_profile_device_key( PCWSTR file, const BYTE *value, DWORD size )
 {
-    static const WCHAR fmtW[] = {'%','c','%','c','%','c','%','c',0};
     static const WCHAR icmW[] = {'S','o','f','t','w','a','r','e','\\',
                                  'M','i','c','r','o','s','o','f','t','\\',
                                  'W','i','n','d','o','w','s',' ','N','T','\\',
@@ -114,7 +112,8 @@ static BOOL set_profile_device_key( PCWSTR file, const BYTE *value, DWORD size )
     PROFILE profile;
     HPROFILE handle;
     HKEY icm_key, class_key;
-    WCHAR basenameW[MAX_PATH], classW[5];
+    WCHAR classW[5];
+    const WCHAR *basenameW;
 
     profile.dwType = PROFILE_FILENAME;
     profile.pProfileData = (PVOID)file;
@@ -134,9 +133,10 @@ static BOOL set_profile_device_key( PCWSTR file, const BYTE *value, DWORD size )
     }
     RegCreateKeyExW( HKEY_LOCAL_MACHINE, icmW, 0, NULL, 0, KEY_ALL_ACCESS, NULL, &icm_key, NULL );
 
-    basename( file, basenameW );
-    sprintfW( classW, fmtW, (header.phClass >> 24) & 0xff, (header.phClass >> 16) & 0xff,
-                            (header.phClass >> 8) & 0xff,  header.phClass & 0xff );
+    basenameW  = basename( file );
+    swprintf( classW, ARRAY_SIZE(classW), L"%c%c%c%c",
+              (header.phClass >> 24) & 0xff, (header.phClass >> 16) & 0xff,
+              (header.phClass >> 8) & 0xff,  header.phClass & 0xff );
 
     RegCreateKeyExW( icm_key, classW, 0, NULL, 0, KEY_ALL_ACCESS, NULL, &class_key, NULL );
     if (value) RegSetValueExW( class_key, basenameW, 0, REG_BINARY, value, size );
@@ -447,9 +447,9 @@ BOOL WINAPI GetColorProfileFromHandle( HPROFILE handle, PBYTE buffer, PDWORD siz
     }
     get_profile_header( profile, &header );
 
-    if (!buffer || header.phSize > *size)
+    if (!buffer || profile->size > *size)
     {
-        *size = header.phSize;
+        *size = profile->size;
         release_profile( profile );
         return FALSE;
     }
@@ -1110,25 +1110,30 @@ BOOL WINAPI InstallColorProfileA( PCSTR machine, PCSTR profile )
  */
 BOOL WINAPI InstallColorProfileW( PCWSTR machine, PCWSTR profile )
 {
-    WCHAR dest[MAX_PATH], base[MAX_PATH];
-    DWORD size = sizeof(dest);
-    static const WCHAR slash[] = { '\\', 0 };
+    const WCHAR *name;
+    BOOL ret = TRUE;
+    DWORD size;
+    WCHAR *dest;
 
     TRACE( "( %s )\n", debugstr_w(profile) );
 
     if (machine || !profile) return FALSE;
 
-    if (!GetColorDirectoryW( machine, dest, &size )) return FALSE;
+    name = basename( profile );
+    size = (MAX_PATH + wcslen(name)) * sizeof(WCHAR);
+    if (!(dest = malloc( size ))) return FALSE;
 
-    basename( profile, base );
+    if (!GetColorDirectoryW( NULL, dest, &size ))
+    {
+        free( dest );
+        return FALSE;
+    }
+    wcscat( dest, L"\\" );
+    wcscat( dest, name );
 
-    lstrcatW( dest, slash );
-    lstrcatW( dest, base );
-
-    /* Is source equal to destination? */
-    if (!lstrcmpW( profile, dest )) return TRUE;
-
-    return CopyFileW( profile, dest, TRUE );
+    if (wcsicmp( profile, dest )) ret = CopyFileW( profile, dest, TRUE );
+    free( dest );
+    return ret;
 }
 
 /******************************************************************************
@@ -1586,4 +1591,14 @@ HPROFILE WINAPI WcsOpenColorProfileW( PROFILE *cdm, PROFILE *camp, PROFILE *gmmp
     FIXME("no support for WCS profiles\n" );
 
     return OpenColorProfileW( cdm, access, sharing, creation );
+}
+
+/******************************************************************************
+ * WcsCreateIccProfile                [MSCMS.@]
+ */
+HPROFILE WINAPI WcsCreateIccProfile( HPROFILE profile, DWORD options )
+{
+    FIXME( "%p, %#lx stub!\n", profile, options );
+
+    return NULL;
 }

@@ -33,7 +33,7 @@
 #include <fusion.h>
 #endif
 
-#include <pshpack1.h>
+#pragma pack(push,1)
 
 typedef struct
 {
@@ -428,7 +428,7 @@ typedef struct
     BYTE Data[168];
 } RESOURCE;
 
-#include <poppack.h>
+#pragma pack(pop)
 
 struct tagASSEMBLY;
 typedef struct tagASSEMBLY ASSEMBLY;

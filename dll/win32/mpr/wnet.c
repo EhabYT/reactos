@@ -2509,25 +2509,34 @@ DWORD WINAPI WNetGetConnectionA( LPCSTR lpLocalName,
         if (len)
         {
             PWSTR wideLocalName = HeapAlloc(GetProcessHeap(), 0, len * sizeof(WCHAR));
+            DWORD wideRemoteSize = MAX_PATH;
+            PWSTR wideRemote = HeapAlloc(GetProcessHeap(), 0,
+             wideRemoteSize * sizeof(WCHAR));
 
-            if (wideLocalName)
+            if (wideLocalName && wideRemote)
             {
-                WCHAR wideRemoteStatic[MAX_PATH];
-                DWORD wideRemoteSize = ARRAY_SIZE(wideRemoteStatic);
-
                 MultiByteToWideChar(CP_ACP, 0, lpLocalName, -1, wideLocalName, len);
 
-                /* try once without memory allocation */
-                ret = WNetGetConnectionW(wideLocalName, wideRemoteStatic,
-                 &wideRemoteSize);
+                ret = WNetGetConnectionW(wideLocalName, wideRemote, &wideRemoteSize);
+                while (ret == WN_MORE_DATA)
+                {
+                    HeapFree(GetProcessHeap(), 0, wideRemote);
+                    wideRemote = HeapAlloc(GetProcessHeap(), 0,
+                     wideRemoteSize * sizeof(WCHAR));
+                    if (wideRemote)
+                        ret = WNetGetConnectionW(wideLocalName, wideRemote,
+                         &wideRemoteSize);
+                    else
+                        ret = WN_OUT_OF_MEMORY;
+                }
                 if (ret == WN_SUCCESS)
                 {
-                    int len = WideCharToMultiByte(CP_ACP, 0, wideRemoteStatic,
+                    int len = WideCharToMultiByte(CP_ACP, 0, wideRemote,
                      -1, NULL, 0, NULL, NULL);
 
                     if (len <= *lpBufferSize)
                     {
-                        WideCharToMultiByte(CP_ACP, 0, wideRemoteStatic, -1,
+                        WideCharToMultiByte(CP_ACP, 0, wideRemote, -1,
                          lpRemoteName, *lpBufferSize, NULL, NULL);
                         ret = WN_SUCCESS;
                     }
@@ -2537,38 +2546,12 @@ DWORD WINAPI WNetGetConnectionA( LPCSTR lpLocalName,
                         ret = WN_MORE_DATA;
                     }
                 }
-                else if (ret == WN_MORE_DATA)
-                {
-                    PWSTR wideRemote = HeapAlloc(GetProcessHeap(), 0,
-                     wideRemoteSize * sizeof(WCHAR));
-
-                    if (wideRemote)
-                    {
-                        ret = WNetGetConnectionW(wideLocalName, wideRemote,
-                         &wideRemoteSize);
-                        if (ret == WN_SUCCESS)
-                        {
-                            if (len <= *lpBufferSize)
-                            {
-                                WideCharToMultiByte(CP_ACP, 0, wideRemoteStatic,
-                                 -1, lpRemoteName, *lpBufferSize, NULL, NULL);
-                                ret = WN_SUCCESS;
-                            }
-                            else
-                            {
-                                *lpBufferSize = len;
-                                ret = WN_MORE_DATA;
-                            }
-                        }
-                        HeapFree(GetProcessHeap(), 0, wideRemote);
-                    }
-                    else
-                        ret = WN_OUT_OF_MEMORY;
-                }
-                HeapFree(GetProcessHeap(), 0, wideLocalName);
             }
             else
                 ret = WN_OUT_OF_MEMORY;
+
+            HeapFree(GetProcessHeap(), 0, wideLocalName);
+            HeapFree(GetProcessHeap(), 0, wideRemote);
         }
         else
             ret = WN_BAD_LOCALNAME;

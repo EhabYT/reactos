@@ -3,6 +3,7 @@ spec2def(activeds.dll activeds.spec ADD_IMPORTLIB)
 
 list(APPEND SOURCE
     activeds_main.c
+    dnwithbinary.c
     pathname.c
     stubs.c
     precomp.h)

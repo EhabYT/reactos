@@ -230,6 +230,7 @@ UINT msi_parse_command_line( MSIPACKAGE *package, LPCWSTR szCommandLine,
         while (ptr[len - 1] == ' ') len--;
 
         prop = malloc( (len + 1) * sizeof(WCHAR) );
+        if (!prop) return ERROR_OUTOFMEMORY;
         memcpy( prop, ptr, len * sizeof(WCHAR) );
         prop[len] = 0;
         if (!preserve_case) wcsupr( prop );
@@ -239,6 +240,11 @@ UINT msi_parse_command_line( MSIPACKAGE *package, LPCWSTR szCommandLine,
 
         num_quotes = 0;
         val = malloc( (wcslen( ptr2 ) + 1) * sizeof(WCHAR) );
+        if (!val)
+        {
+            free( prop );
+            return ERROR_OUTOFMEMORY;
+        }
         len = parse_prop( ptr2, val, &num_quotes );
         if (num_quotes % 2)
         {
@@ -5226,12 +5232,11 @@ static UINT ACTION_InstallFinalize(MSIPACKAGE *package)
 
 UINT ACTION_ForceReboot(MSIPACKAGE *package)
 {
-    WCHAR buffer[256], sysdir[MAX_PATH], squashed_pc[SQUASHED_GUID_SIZE];
+    WCHAR buffer[256], squashed_pc[SQUASHED_GUID_SIZE];
     HKEY hkey;
 
     squash_guid( package->ProductCode, squashed_pc );
 
-    GetSystemDirectoryW(sysdir, ARRAY_SIZE(sysdir));
     RegCreateKeyW(HKEY_LOCAL_MACHINE, L"Software\\Microsoft\\Windows\\CurrentVersion\\RunOnce", &hkey);
     swprintf(buffer, ARRAY_SIZE(buffer), L"%s\\MsiExec.exe /@ \"%s\"", sysdir, squashed_pc);
 
@@ -7737,7 +7742,7 @@ StandardActions[] =
     { L"InstallValidate", IDS_DESC_INSTALLVALIDATE, 0, ACTION_InstallValidate, NULL },
     { L"IsolateComponents", 0, 0, ACTION_IsolateComponents, NULL },
     { L"LaunchConditions", IDS_DESC_LAUNCHCONDITIONS, 0, ACTION_LaunchConditions, NULL },
-    { L"MigrateFeutureStates", IDS_DESC_MIGRATEFEATURESTATES, IDS_TEMP_MIGRATEFEATURESTATES, ACTION_MigrateFeatureStates, NULL },
+    { L"MigrateFeatureStates", IDS_DESC_MIGRATEFEATURESTATES, IDS_TEMP_MIGRATEFEATURESTATES, ACTION_MigrateFeatureStates, NULL },
     { L"MoveFiles", IDS_DESC_MOVEFILES, IDS_TEMP_MOVEFILES, ACTION_MoveFiles, NULL },
     { L"MsiPublishAssemblies", IDS_DESC_MSIPUBLISHASSEMBLIES, IDS_TEMP_MSIPUBLISHASSEMBLIES, ACTION_MsiPublishAssemblies, L"MsiUnpublishAssemblies" },
     { L"MsiUnpublishAssemblies", IDS_DESC_MSIUNPUBLISHASSEMBLIES, IDS_TEMP_MSIUNPUBLISHASSEMBLIES, ACTION_MsiUnpublishAssemblies, L"MsiPublishAssemblies" },

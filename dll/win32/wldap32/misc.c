@@ -228,7 +228,7 @@ static void escape_filter_element( PCHAR src, ULONG srclen, PCHAR dst )
         else
             d += sprintf( d, fmt, (unsigned char)src[i] );
     }
-    *++d = 0;
+    *d = 0;
 }
 
 /***********************************************************************
