@@ -32,13 +32,19 @@
 
 extern HMODULE WININET_hModule DECLSPEC_HIDDEN;
 
+typedef struct server_addr
+{
+    struct sockaddr_storage addr;
+    int addr_len;
+    char addr_str[INET6_ADDRSTRLEN];
+    struct server_addr *next;
+} server_addr_t;
+
 typedef struct {
     WCHAR *name;
     INTERNET_PORT port;
     BOOL is_https;
-    struct sockaddr_storage addr;
-    int addr_len;
-    char addr_str[INET6_ADDRSTRLEN];
+    server_addr_t *addr;
 
     WCHAR *scheme_host_port;
     const WCHAR *host_port;
@@ -412,7 +418,8 @@ DWORD HTTP_Connect(appinfo_t*,LPCWSTR,
         LPCWSTR lpszPassword, DWORD dwFlags, DWORD_PTR dwContext,
         DWORD dwInternalFlags, HINTERNET*) DECLSPEC_HIDDEN;
 
-BOOL GetAddress(const WCHAR*,INTERNET_PORT,SOCKADDR*,int*,char*) DECLSPEC_HIDDEN;
+server_addr_t *GetAddress(const WCHAR*,INTERNET_PORT) DECLSPEC_HIDDEN;
+int create_connect_socket(server_addr_t*,int,DWORD,object_header_t*,DWORD_PTR) DECLSPEC_HIDDEN;
 
 DWORD get_cookie_header(const WCHAR*,const WCHAR*,WCHAR**) DECLSPEC_HIDDEN;
 DWORD set_cookie(substr_t,substr_t,substr_t,substr_t,DWORD) DECLSPEC_HIDDEN;
@@ -427,7 +434,7 @@ VOID INTERNET_SendCallback(object_header_t *hdr, DWORD_PTR dwContext,
                            DWORD dwStatusInfoLength) DECLSPEC_HIDDEN;
 WCHAR *INTERNET_FindProxyForProtocol(LPCWSTR szProxy, LPCWSTR proto) DECLSPEC_HIDDEN;
 
-DWORD create_netconn(server_t*,DWORD,BOOL,DWORD,netconn_t**) DECLSPEC_HIDDEN;
+DWORD create_netconn(server_t*,object_header_t*,DWORD,BOOL,DWORD,netconn_t**) DECLSPEC_HIDDEN;
 void free_netconn(netconn_t*) DECLSPEC_HIDDEN;
 void NETCON_unload(void) DECLSPEC_HIDDEN;
 DWORD NETCON_secure_connect(netconn_t*,server_t*) DECLSPEC_HIDDEN;
