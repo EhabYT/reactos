@@ -178,7 +178,7 @@ dll/win32/regapi              # Synced to Wine-10.0
 dll/win32/resutils            # Synced to Wine-10.0
 dll/win32/riched20            # Synced to Wine-11.18
 dll/win32/riched32            # Synced to Wine-11.18
-dll/win32/rpcrt4              # Synced to Wine-10.0
+dll/win32/rpcrt4              # Synced to Wine-11.18 (upstream's WIN32_NO_STATUS removal not applied - see below)
 dll/win32/rsabase             # Synced to Wine-10.0
 dll/win32/rsaenh              # Synced to WineStaging-2.9
 dll/win32/rtworkq             # Synced to Wine-11.18
@@ -417,6 +417,16 @@ WIN32_NO_STATUS is not removable
 
     When a component's ONLY upstream delta is that removal, there is nothing
     to take and the entry can simply be marked as synced.
+
+    The removal is not always the whole delta, though, and it is worth knowing
+    where it comes from. Wine-11.18 got it from one tree-wide commit,
+    9e03f3324c "include: Avoid redefinition warnings for STATUS_ codes", which
+    changed Wine's include/ so the per-file define was no longer needed and
+    then deleted it from dozens of modules at once. So it arrives bundled with
+    unrelated work, and the merge is CLEAN in both directions: rpcrt4 took a
+    real NDR marshaler fix and lost two defines on the way through. Check every
+    synced file for the line afterwards rather than only the components whose
+    sole delta is the removal.
 
 WINE_NO_UNICODE_MACROS undef blocks are not removable
     Same class as WIN32_NO_STATUS. Several of our .idl files open with
@@ -754,6 +764,38 @@ A backport guard is a note to your future self
     report the removed guard as a changed marker count. Not every guard is
     like this - WIN32_NO_STATUS and the unicode-macro undefs are permanent
     and are documented as such above.
+
+Upstream can fix a check by deleting it
+    Not every removed bounds check is a regression. rpcrt4's
+    safe_copy_to_buffer validated the destination as
+
+        pStubMsg->Buffer + size > (unsigned char *)pStubMsg->RpcMsg->Buffer + pStubMsg->BufferLength
+
+    but NdrPointerMarshall and friends are not always writing into
+    RpcMsg->Buffer - NdrClientInitializeNew sets Buffer to a separate allocation
+    and the marshaller is driven off pStubMsg->Buffer. So the check compared
+    against a buffer that was not the one being written, which made it a
+    false-positive source and useless as a guard. Wine-11.18 removed it in
+    2df4819d30 "rpcrt4: Don't validate buffer in NDR marshaler", renamed the
+    helper copy_to_buffer, and added tests/ndr_marshall.c:test_pointer_validation,
+    which passes RpcMsg->Buffer = (void *)0xdeadbeef and asserts the marshal
+    still succeeds. The commit is deliberate; do not "restore" the check.
+
+    The reason it is still safe is the direction of the copy, which is worth
+    checking rather than assuming: copy_to_buffer writes into the outgoing
+    message buffer from caller-supplied memory, and every one of its 25 call
+    sites is in a *Marshall function. Nothing that reads untrusted wire data
+    lost its guard - safe_copy_from_buffer and safe_buffer_increment keep
+    theirs, consolidated into a new validate_size(). To re-check this after a
+    future sync, list the enclosing function of every copy_to_buffer call and
+    confirm no name contains "Unmarshall".
+
+    Before taking a change like this, look for the test. `gh api
+    repos/wine-mirror/wine/commits/<sha>` reaches the upstream commit even when
+    the git remotes do not, and the message plus the diff say whether a removal
+    was considered or incidental. The same commit list is the quickest way to
+    date a change: 2df4819d30 is from 2025-02-27 and 9e03f3324c from 2026-03-06,
+    which is long enough in the tree to have been exercised widely.
 
 Upstream deletions are not automatically ours
     Wine 11 deletes DllGetVersion and URLSubRegQueryA from
